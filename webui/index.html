@@ -14,7 +14,7 @@
 
     <script>
       const list = document.getElementById("list");
-      let socket = new WebSocket("ws://orangepi5.lan:8080/ws");
+      let socket = new WebSocket(`ws://${location.host}/ws`);
       console.log("Attempting Connection...");
 
       socket.addEventListener("open", () => {
