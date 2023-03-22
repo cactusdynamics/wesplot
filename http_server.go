@@ -44,9 +44,11 @@ func NewHttpServer(dataBroadcaster *DataBroadcaster, addr string) *HttpServer {
 
 func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 	// TODO: need to ensure that we allow CORS.
-	c, err := websocket.Accept(w, req, nil)
+	c, err := websocket.Accept(w, req, &websocket.AcceptOptions{
+		OriginPatterns: []string{"*"},
+	})
 	if err != nil {
-		s.logger.Warn("failed to accept new websocket connection")
+		s.logger.WithError(err).Warn("failed to accept new websocket connection")
 		return
 	}
 
@@ -63,7 +65,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 			select {
 			case dataRow, open := <-channel:
 				if !open { // Not sure why this would ever happen, but sure
-					// TODO: better error message
+					// TODO: maybe panic here
 					s.logger.Warn("data channel closed, closing websocket")
 					c.Close(websocket.StatusNormalClosure, "channel closed")
 					return
