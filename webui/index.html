@@ -1,40 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Go WebSocket Tutorial</title>
-  </head>
-  <body>
-    <h2>Hello World</h2>
-    <ul id="list">
+<!doctype html>
+<html lang="en" style="height: 100%">
 
-    </ul>
+<head>
+  <meta charset="utf-8">
+  <title>Plots!</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
 
-    <script>
-      const list = document.getElementById("list");
-      let socket = new WebSocket(`ws://${location.host}/ws`);
-      console.log("Attempting Connection...");
+<body style="height: 100%; margin: 0">
+  <div id="container" style="height: 100%"></div>
+  <script src="dist/echarts.js"></script>
+  <script src="scripts/main.js"></script>
+</body>
 
-      socket.addEventListener("open", () => {
-          console.log("Successfully Connected");
-      });
-
-      socket.addEventListener("close", (event) => {
-          console.log("Socket Closed Connection: ", event);
-      });
-
-      socket.addEventListener("error", (error) => {
-        console.log("Socket Error: ", error);
-      });
-
-      socket.addEventListener("message", (event) => {
-        const data = JSON.parse(event.data);
-        const item = document.createElement("li");
-        item.textContent = data["Data"];
-        list.appendChild(item);
-      });
-    </script>
-  </body>
 </html>

@@ -14,7 +14,7 @@ import (
 
 // Arrow? haha it's too much work for this for now.
 type DataRow struct {
-	Timestamp time.Time
+	Timestamp float64
 	Data      []float64
 }
 
@@ -109,7 +109,7 @@ func (s *CsvDataSource) interpretRawData(line []string) (DataRow, error) {
 	var dataRow DataRow
 	// TODO: timestamp feature is not tested.
 	if s.timestampColumn < 0 {
-		dataRow.Timestamp = time.Now()
+		dataRow.Timestamp = float64(time.Now().UnixMilli()) / 1000
 	}
 
 	for i, value := range line {
