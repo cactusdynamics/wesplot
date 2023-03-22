@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -79,7 +80,7 @@ func (s *CsvDataSource) Read(ctx context.Context) (DataRow, error) {
 	dataRow, err := s.interpretRawData(record)
 	if err == ignoreThisRow {
 		s.logger.Warnf("ignoring line due to raw data interpret: %v", record)
-		return dataRow, err
+		return DataRow{}, err
 	} else if err != nil {
 		s.logger.WithField("line", record).WithError(err).Error("failed to interpret raw data") // Shouldn't really happen, right?
 		return DataRow{}, err
@@ -90,7 +91,7 @@ func (s *CsvDataSource) Read(ctx context.Context) (DataRow, error) {
 		dataRow, err = operator(dataRow)
 		if err == ignoreThisRow {
 			s.logger.Warnf("ignoring line due to operator: %v", record)
-			return dataRow, err
+			return DataRow{}, err
 		} else if err != nil {
 			s.logger.WithField("line", record).WithField("operator", operator).WithError(err).Error("failed to apply operator raw data") // Shouldn't really happen, right? also operator name not logged?
 			return DataRow{}, err
@@ -116,7 +117,7 @@ func (s *CsvDataSource) interpretRawData(line []string) (DataRow, error) {
 			continue
 		}
 
-		floatValue, err := strconv.ParseFloat(value, 64)
+		floatValue, err := strconv.ParseFloat(strings.TrimSpace(value), 64)
 		if err != nil {
 			return DataRow{}, ignoreThisRow
 		}
