@@ -2,7 +2,6 @@ package wesplot
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"runtime/trace"
 	"sync"
@@ -120,6 +119,11 @@ func (d *DataBroadcaster) RegisterChannel(ctx context.Context, c chan<- DataRow)
 	// Second, we add the channel into the list of channels we want to live update.
 	// Not tracing this because it should be insignificant in terms of time taken
 	d.channelsForLiveUpdate = append(d.channelsForLiveUpdate, c)
+
+	d.logger.WithFields(logrus.Fields{
+		"newChannel": c,
+		"channels":   d.channelsForLiveUpdate,
+	}).Info("registered channel")
 }
 
 // Deregister a channel to get data updates. Called when a websocket client
@@ -137,14 +141,13 @@ func (d *DataBroadcaster) DeregisterChannel(ctx context.Context, c chan<- DataRo
 	trace.WithRegion(traceCtx, "Lock", d.mutex.Lock)
 	defer d.mutex.Unlock()
 
-	origLen := len(d.channelsForLiveUpdate)
 	d.channelsForLiveUpdate = Filter(d.channelsForLiveUpdate, func(channel chan<- DataRow) bool {
-		return channel == c
+		return channel != c
 	})
-	newLen := len(d.channelsForLiveUpdate)
-	if newLen != origLen-1 {
-		panic(fmt.Sprintf("couldn't remove channel %v (%d %d)", c, origLen, newLen))
-	}
+	d.logger.WithFields(logrus.Fields{
+		"removedChannel": c,
+		"channels":       d.channelsForLiveUpdate,
+	}).Info("deregistered channel")
 }
 
 func (d *DataBroadcaster) run(ctx context.Context) error {
@@ -178,13 +181,15 @@ func (d *DataBroadcaster) run(ctx context.Context) error {
 }
 
 func (d *DataBroadcaster) cacheAndBroadcastData(traceCtx context.Context, dataRow DataRow) {
-	d.logger.Info("cache and broadcast")
 	d.numDataRowsEmitted++
 
 	trace.WithRegion(traceCtx, "Lock", d.mutex.Lock)
 	defer d.mutex.Unlock()
 
-	d.logger.WithField("timestamp", dataRow.Timestamp).WithField("data", dataRow.Data).Info("new dataRow")
+	d.logger.WithFields(logrus.Fields{
+		"timestamp": dataRow.Timestamp,
+		"data":      dataRow.Data,
+	}).Debug("new data row")
 
 	trace.WithRegion(traceCtx, "Cache", func() {
 		d.dataBuffer.Push(dataRow)
