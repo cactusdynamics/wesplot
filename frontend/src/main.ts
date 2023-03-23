@@ -1,4 +1,7 @@
 import * as echarts from "echarts";
+import "./app.css";
+import "@fortawesome/fontawesome-free/css/fontawesome.css";
+import "@fortawesome/fontawesome-free/css/solid.css";
 
 type DataRow = {
   Timestamp: number;
@@ -17,7 +20,7 @@ interface Metadata {
 async function main() {
   const response = await fetch(`http://${location.hostname}:8080/metadata`);
   const metadata = await response.json();
-  const dom = document.getElementById("container")!;
+  const dom = document.getElementById("plot")!;
 
   const myChart = echarts.init(dom, undefined, {
     renderer: "canvas",
@@ -34,6 +37,10 @@ async function main() {
     },
     yAxis: {
       type: "value",
+    },
+    grid: {
+      left: 30,
+      right: 30,
     },
     series: [
       {
