@@ -11,9 +11,9 @@ func main() {
 
 	metadata := wesplot.Metadata{
 		RollingWindowSize: 10000,
-		EChartOptions: wesplot.EChartOptions{
+		EChartsOption: wesplot.EChartsOption{
 			Title: wesplot.Title{
-				Text: "title",
+				Text: "Plot",
 			},
 		},
 	}

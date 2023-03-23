@@ -97,8 +97,10 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *HttpServer) handleMetadata(w http.ResponseWriter, req *http.Request) {
-
 	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Headers", "content-type")
+	w.Header().Add("Access-Control-Allow-Methods", "*")
 	err := json.NewEncoder(w).Encode(s.metadata)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
