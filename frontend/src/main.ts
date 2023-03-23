@@ -67,16 +67,20 @@ async function main() {
   });
 
   socket.addEventListener("message", (event) => {
-    const data: DataRow = JSON.parse(event.data);
-    if (init_x == undefined) {
-      init_x = data.Timestamp;
-    }
+    const rows: DataRow[] = JSON.parse(event.data);
 
-    series_data.push({
-      value: [data.Timestamp - init_x, data.Data[0]],
-    });
-    if (series_data.length > metadata.RollingWindowSize) {
-      series_data.shift();
+    // TODO: inefficient, but OK for now.
+    for (const data of rows) {
+      if (init_x == undefined) {
+        init_x = data.Timestamp;
+      }
+
+      series_data.push({
+        value: [data.Timestamp - init_x, data.Data[0]],
+      });
+      if (series_data.length > metadata.RollingWindowSize) {
+        series_data.shift();
+      }
     }
 
     myChart.setOption({

@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-
 	metadata := wesplot.Metadata{
 		RollingWindowSize: 10000,
 		EChartsOption: wesplot.EChartsOption{
