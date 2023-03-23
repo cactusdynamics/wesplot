@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"nhooyr.io/websocket"
@@ -61,22 +62,47 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 
 	go func() {
 		defer wg.Done()
+
+		// We buffer data for at least X milliseconds or if it reaches capacity before sending it to the client.
+		// Note: tune or allow configuration
+		const bufferTimeCapacity = 50 * time.Millisecond
+		const bufferItemCapacity = 3000
+		lastSendTime := time.Now()
+		dataBuffer := make([]DataRow, 0, bufferItemCapacity)
+
+		flushBufferToWebsocket := func() error {
+			err := wsjson.Write(ctx, c, dataBuffer)
+			if err != nil {
+				return err
+			}
+
+			dataBuffer = make([]DataRow, 0, bufferItemCapacity) // TODO: try to clear the buffer without allocating
+			lastSendTime = time.Now()
+			return nil
+		}
+
 		for {
 			select {
 			case dataRow, open := <-channel:
-				if !open { // Not sure why this would ever happen, but sure
+				if !open {
+					// Not sure why this would ever happen, but sure
 					// TODO: maybe panic here
 					s.logger.Warn("data channel closed, closing websocket")
 					c.Close(websocket.StatusNormalClosure, "channel closed")
 					return
 				}
 
-				err := wsjson.Write(ctx, c, dataRow)
-				if err != nil {
-					// At this point the websocket closed, so we don't even need to send anything
-					s.logger.Warn("websocket write failed and closed")
-					return
+				dataBuffer = append(dataBuffer, dataRow)
+				if len(dataBuffer) >= bufferItemCapacity || time.Now().Sub(lastSendTime) > bufferTimeCapacity {
+					s.logger.WithField("buflen", len(dataBuffer)).Debug("buffer capacity reached, flushing")
+					err := flushBufferToWebsocket()
+					if err != nil {
+						// At this point the websocket closed, so we don't even need to send anything
+						s.logger.Warn("websocket write failed and closed")
+						return
+					}
 				}
+
 			case <-ctx.Done(): // client connection closes causes the req.Context to be canceled?
 				s.logger.Info("client closed connection or context canceled")
 				c.Close(websocket.StatusNormalClosure, "")
