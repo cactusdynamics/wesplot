@@ -9,7 +9,14 @@ interface DataItem {
   value: [number, number];
 }
 
-function main() {
+interface Metadata {
+  RollingWindowSize: number;
+  EChartsOption: echarts.EChartsOption;
+}
+
+async function main() {
+  const response = await fetch(`http://${location.hostname}:8080/metadata`);
+  const metadata = await response.json();
   const dom = document.getElementById("container")!;
 
   const myChart = echarts.init(dom, undefined, {
@@ -21,8 +28,9 @@ function main() {
   const series_data: DataItem[] = [];
 
   const options: echarts.EChartsOption = {
+    ...metadata.EChartsOption,
     xAxis: {
-      type: "value",
+      type: "time",
     },
     yAxis: {
       type: "value",
@@ -60,6 +68,9 @@ function main() {
     series_data.push({
       value: [data.Timestamp - init_x, data.Data[0]],
     });
+    if (series_data.length > metadata.RollingWindowSize) {
+      series_data.shift();
+    }
 
     myChart.setOption({
       series: [
