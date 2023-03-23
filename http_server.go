@@ -1,6 +1,7 @@
 package wesplot
 
 import (
+	"encoding/json"
 	"io/fs"
 	"net/http"
 	"sync"
@@ -15,14 +16,16 @@ const bufferSize = 10000
 type HttpServer struct {
 	dataBroadcaster *DataBroadcaster
 	addr            string
+	metadata        Metadata
 	mux             *http.ServeMux
 	logger          logrus.FieldLogger
 }
 
-func NewHttpServer(dataBroadcaster *DataBroadcaster, addr string) *HttpServer {
+func NewHttpServer(dataBroadcaster *DataBroadcaster, addr string, metadata Metadata) *HttpServer {
 	s := &HttpServer{
 		dataBroadcaster: dataBroadcaster,
 		addr:            addr,
+		metadata:        metadata,
 		mux:             http.NewServeMux(),
 		logger:          logrus.WithField("tag", "HttpServer"),
 	}
@@ -34,6 +37,7 @@ func NewHttpServer(dataBroadcaster *DataBroadcaster, addr string) *HttpServer {
 
 	s.mux.Handle("/", http.FileServer(http.FS(subFS)))
 	s.mux.HandleFunc("/ws", s.handleWebSocket)
+	s.mux.HandleFunc("/metadata", s.handleMetadata)
 
 	return s
 }
@@ -90,6 +94,16 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 	wg.Wait()
 	s.dataBroadcaster.DeregisterChannel(ctx, channel)
 	close(channel)
+}
+
+func (s *HttpServer) handleMetadata(w http.ResponseWriter, req *http.Request) {
+
+	w.Header().Add("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(s.metadata)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
 }
 
 func (s *HttpServer) Run() {
