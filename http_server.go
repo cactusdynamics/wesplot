@@ -1,7 +1,6 @@
 package wesplot
 
 import (
-	"embed"
 	"io/fs"
 	"net/http"
 	"sync"
@@ -10,9 +9,6 @@ import (
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
-
-//go:embed webui
-var webuiFiles embed.FS
 
 const bufferSize = 10000
 
