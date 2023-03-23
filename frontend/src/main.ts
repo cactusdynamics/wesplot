@@ -2,6 +2,7 @@ import * as echarts from "echarts";
 import "./app.css";
 import "@fortawesome/fontawesome-free/css/fontawesome.css";
 import "@fortawesome/fontawesome-free/css/solid.css";
+import { merge } from "lodash";
 
 type DataRow = {
   Timestamp: number;
@@ -19,7 +20,7 @@ interface Metadata {
 
 async function main() {
   const response = await fetch(`http://${location.hostname}:8080/metadata`);
-  const metadata = await response.json();
+  const metadata: Metadata = await response.json();
   const dom = document.getElementById("plot")!;
 
   const myChart = echarts.init(dom, undefined, {
@@ -31,16 +32,55 @@ async function main() {
   const series_data: DataItem[] = [];
 
   const options: echarts.EChartsOption = {
-    ...metadata.EChartsOption,
     xAxis: {
-      type: "time",
+      type: "value",
+      nameLocation: "middle",
+      nameGap: 35,
+      nameTextStyle: {
+        fontWeight: "bolder",
+      },
+      axisLabel: {
+        fontSize: 16,
+      },
     },
     yAxis: {
       type: "value",
+      nameLocation: "middle",
+      nameGap: 25,
+      nameTextStyle: {
+        fontWeight: "bolder",
+      },
+      axisLabel: {
+        fontSize: 16,
+        formatter: (value: String) => `${value} kg`,
+      },
+    },
+    textStyle: {
+      fontSize: 16,
     },
     grid: {
-      left: 30,
-      right: 30,
+      left: 50,
+      right: 50,
+    },
+    tooltip: {
+      trigger: "axis",
+      axisPointer: {
+        type: "cross",
+      },
+    },
+    title: {
+      left: "center",
+    },
+    toolbox: {
+      show: true,
+      feature: {
+        saveAsImage: {},
+        dataView: {},
+        dataZoom: {},
+        magicType: {
+          type: ['line', 'bar']
+        },
+      }
     },
     series: [
       {
@@ -49,7 +89,7 @@ async function main() {
       },
     ],
   };
-
+  merge(options, metadata.EChartsOption)
   const hostname = `ws://${location.hostname}:8080/ws`;
   console.log(`connecting to ${hostname}`);
   const socket = new WebSocket(hostname);

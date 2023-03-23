@@ -77,8 +77,16 @@ func main() {
 		WindowSize: options.WindowSize,
 		Columns:    options.Columns, // TODO: dynamic columns
 		EChartsOption: wesplot.EChartsOption{
-			Title: wesplot.Title{
-				Text: "Plot",
+			Title: wesplot.EChartsOptionTitle{
+				Text: options.Title,
+			},
+			YAxis: wesplot.EChartsOptionYAxis{
+				Min:  options.YMin,
+				Max:  options.YMax,
+				Name: "Ylabel",
+			},
+			XAxis: wesplot.EChartsOptionXAxis{
+				Name: "Xlabel",
 			},
 		},
 	}
