@@ -20,6 +20,12 @@ var options struct {
 
 	NumColumns int      `short:"n" long:"num-columns" description:"The number of columns expected for the input data. If specified, input data rows with different number of columns will be ignored."`
 	Columns    []string `short:"c" long:"columns" description:"The columns labels for the input data. This option supercedes num-columns and will also be used to validate the input data like --num-columns."`
+
+	WindowSize int `short:"w" long:"window-size" default:"1000" description:"the number of data rows cached on a rolling windows basis. default: 1000 which means 1000 data points will be cached by the tool and sent any time the browser connects"`
+
+	// This is set to true neither NumColumns nor Columns is specified.
+	// Current unused.
+	dynamicColumnsCount bool
 }
 
 func parseOptions() {
@@ -41,6 +47,14 @@ func parseOptions() {
 			// --columns is the source of truth.
 			logrus.Warn("both --columns and --num-columns are specified. --num-columns is thus ignored.")
 		}
+	} else {
+		if len(options.Columns) == 0 {
+			// This happens when the user specifies neither --num-columns nor
+			// --columns. For now, we assume a single column. Later on, we can make it
+			// dynamic.
+			options.Columns = []string{"y1"}
+			options.dynamicColumnsCount = true
+		}
 	}
 
 	if options.Verbose {
@@ -60,7 +74,8 @@ func main() {
 	parseOptions()
 
 	metadata := wesplot.Metadata{
-		RollingWindowSize: 10000,
+		WindowSize: options.WindowSize,
+		Columns:    options.Columns, // TODO: dynamic columns
 		EChartsOption: wesplot.EChartsOption{
 			Title: wesplot.Title{
 				Text: "Plot",
@@ -68,8 +83,8 @@ func main() {
 		},
 	}
 
-	dataSource := wesplot.NewCsvDataSource(os.Stdin, []wesplot.Operator{}, -1, options.Columns)
-	dataBroadcaster := wesplot.NewDataBroadcaster(dataSource, 10000)
+	dataSource := wesplot.NewCsvDataSource(os.Stdin, []wesplot.Operator{}, -1, options.Columns, options.dynamicColumnsCount)
+	dataBroadcaster := wesplot.NewDataBroadcaster(dataSource, options.WindowSize)
 	server := wesplot.NewHttpServer(dataBroadcaster, "0.0.0.0:8080", metadata)
 
 	dataBroadcaster.Start(context.Background())

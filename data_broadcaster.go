@@ -161,7 +161,7 @@ func (d *DataBroadcaster) run(ctx context.Context) error {
 			dataRow, err = d.source.Read(traceCtx)
 		})
 
-		if err == ignoreThisRow {
+		if err == errIgnoreThisRow {
 			task.End()
 			continue
 		} else if err == io.EOF {

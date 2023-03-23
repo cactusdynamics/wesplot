@@ -9,6 +9,7 @@ type EChartsOption struct {
 }
 
 type Metadata struct {
-	RollingWindowSize int
-	EChartsOption     EChartsOption
+	WindowSize    int
+	Columns       []string
+	EChartsOption EChartsOption
 }
