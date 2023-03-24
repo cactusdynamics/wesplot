@@ -17,6 +17,7 @@ var options struct {
 	Title string   `short:"t" long:"title" description:"Title of the plot"`
 	YMin  *float64 `short:"M" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
 	YMax  *float64 `short:"m" long:"ymax" description:"The max value for y (default: auto scaling)"`
+	YUnit string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
 
 	NumColumns int      `short:"n" long:"num-columns" description:"The number of columns expected for the input data. If specified, input data rows with different number of columns will be ignored."`
 	Columns    []string `short:"c" long:"columns" description:"The columns labels for the input data. This option supercedes num-columns and will also be used to validate the input data like --num-columns."`
@@ -76,9 +77,18 @@ func main() {
 	metadata := wesplot.Metadata{
 		WindowSize: options.WindowSize,
 		Columns:    options.Columns, // TODO: dynamic columns
+		YUnit:      options.YUnit,
 		EChartsOption: wesplot.EChartsOption{
-			Title: wesplot.Title{
-				Text: "Plot",
+			Title: wesplot.EChartsOptionTitle{
+				Text: options.Title,
+			},
+			YAxis: wesplot.EChartsOptionYAxis{
+				Min:  options.YMin,
+				Max:  options.YMax,
+				Name: "Ylabel",
+			},
+			XAxis: wesplot.EChartsOptionXAxis{
+				Name: "Xlabel",
 			},
 		},
 	}
