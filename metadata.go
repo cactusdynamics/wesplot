@@ -22,5 +22,6 @@ type EChartsOption struct {
 type Metadata struct {
 	WindowSize    int
 	Columns       []string
+	YUnit         string
 	EChartsOption EChartsOption
 }
