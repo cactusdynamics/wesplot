@@ -3,42 +3,52 @@ html {
   font-size: 16px;
 }
 
-html, body, div#container {
+html, body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
-/* A column-oriented flexbox system */
-div#container {
+/* A column-oriented flexbox */
+div.column {
   display: flex;
   flex-direction: column;
+  row-gap: 5px;
 }
 
-/* Main container should take up as much space as possible */
-div#container div#main {
-  flex: 1 1 auto;
-}
-
-/* The settings should be initially closed, but can be opened by the settings gear icon */
-div#container div#settings {
-
-}
-
-/* The status bar should take as little space as possible, and is itself a row-oriented flexbox */
-div#container div#status {
-  padding: 6px 12px;
-
-  background-color: bisque;
+/* A row-oriented flexbox */
+div.row {
   display: flex;
   flex-direction: row;
+  column-gap: 5px;
+}
 
-  flex: 0 0 auto;
+/* Disable the gap for either a row or column */
+.no-gap {
+  gap: 0 0 !important;
+}
+
+/* An equally spaced column or row in a flexbox */
+div.item {
+  flex: 1 1 0;
+  height: 100%;
+  width: 100%;
+}
+
+div#main {
+  height: 100%;
+}
+
+div#status {
+  flex: 0 1 auto;
+
+  padding: 6px 12px;
+  background-color: bisque;
 }
 
 /* The status bar text should take up as much space as possible, and be vertically aligned in the middle */
 /* If text overflow, it is indicated by ellipses. On hover (and touch in mobile), it shows the full text */
-div#container div#status div#status-text {
+div#status div#status-text {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -48,7 +58,7 @@ div#container div#status div#status-text {
 }
 
 /* This works to expand the text on desktop. On mobile, you can tap, but must tap away to get rid of this. */
-div#container div#status div#status-text:hover {
+div#status div#status-text:hover {
   overflow: visible;
   white-space: normal;
   text-overflow: initial;
@@ -56,7 +66,7 @@ div#container div#status div#status-text:hover {
 }
 
 /* The status bar text should take up as little space as possible, and be vertically aligned in the middle */
-div#container div#status div#status-button-bar {
+div#status div#status-button-bar {
   align-self: center;
   flex: 0 0 auto;
 }
@@ -64,12 +74,4 @@ div#container div#status div#status-button-bar {
 div#container div#status div#status-button-bar button {
   padding: 0.5rem 0.75rem;
   margin: 0;
-}
-
-div.panel {
-  height: 100%; /* For now this is 100%, later we can make this dynamically generated to have splittable panels */
-}
-
-div.plot {
-  height: 100%;
 }
