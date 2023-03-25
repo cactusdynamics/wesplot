@@ -55,6 +55,8 @@ Features
   - [ ] Zoom, pan, freeze limits, restore to default view
   - [ ] SVG export
   - [ ] Cached size
+  - [ ] Consistent lodash versions
+  - [ ] Chart.js tree-shaking
 
 ### Long term goals
 

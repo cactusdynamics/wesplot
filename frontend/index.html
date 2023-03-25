@@ -10,29 +10,32 @@
     <div id="container">
       <div id="main">
         <div class="panel">
-          <div class="plot" id="plot">
+          <div class="chart-container" style="position: relative; height: 95vh; width: 95vw">
+            <canvas id="myChart"></canvas>
           </div>
         </div>
       </div>
 
-      <div id="settings">
-
-      </div>
+      <div id="settings"></div>
 
       <div id="status">
-        <div id="status-text">
-          Hello world
-        </div>
+        <div id="status-text">Hello world</div>
 
         <div id="status-button-bar">
-          <button id="btn-screenshot"><i class="fa-solid fa-camera" title="Screenshot"></i></button>
-          <button id="btn-settings"><i class="fa-solid fa-gear" title="Settings"></i></button>
-          <button id="btn-play" style="display: none;"><i class="fa-solid fa-play" title="Play"></i></button>
-          <button id="btn-pause"><i class="fa-solid fa-pause" title="Pause"></i></button>
+          <button id="btn-screenshot">
+            <i class="fa-solid fa-camera" title="Screenshot"></i>
+          </button>
+          <button id="btn-settings">
+            <i class="fa-solid fa-gear" title="Settings"></i>
+          </button>
+          <button id="btn-play" style="display: none">
+            <i class="fa-solid fa-play" title="Play"></i>
+          </button>
+          <button id="btn-pause">
+            <i class="fa-solid fa-pause" title="Pause"></i>
+          </button>
         </div>
       </div>
-    </div>
-
     </div>
 
     <script type="module" src="/src/main.ts"></script>
