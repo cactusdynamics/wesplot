@@ -74,6 +74,8 @@ func parseOptions() {
 func main() {
 	parseOptions()
 
+	logrus.Infof("starting wesplot %v", wesplot.Version)
+
 	metadata := wesplot.Metadata{
 		WindowSize: options.WindowSize,
 		Columns:    options.Columns, // TODO: dynamic columns

@@ -1,4 +1,4 @@
-//go:build !embedded_ui
+//go:build !prod
 
 package wesplot
 
