@@ -10,21 +10,21 @@ It's inspired by ttyplot except we leverage the power of the web. Amazing.
 Features
 --------
 
-- [ ] Ability to stream data from stdin and plot in the browser
-  - [ ] There can many time series in a single data stream.
+- [x] Ability to stream data from stdin and plot in the browser
+  - [x] There can many time series in a single data stream.
   - [ ] The different series can be comma-separated or space-separated.
-  - [ ] Can handle infinite streams by caching only the most recent X data points (configurable).
-  - [ ] Does not lose any messages unless it is expired.
+  - [x] Can handle infinite streams by caching only the most recent X data points (configurable).
+  - [x] Does not lose any messages unless it is expired.
   - [ ] If the data stream ends, the data is cached and can be sent to the browser until the backend is stopped.
     - [ ] This opens the door for plotting a csv file via `cat file.csv | wesplot`.
     - [ ] For streams that are known to end, the backend and frontend cache will effectively be infinite.
   - [ ] Ability to select a column as the timestamp
-  - [ ] Ability to generate timestamp if doesn't exist in source data
+  - [x] Ability to generate timestamp if doesn't exist in source data
   - [ ] Ability to use non-time values as the x axis.
-  - [ ] Ability to customize the plot directly from the command line.
+  - [x] Ability to customize the plot directly from the command line.
   - [ ] Automatically open the local browser upon command.
   - [ ] Proper CORS rules
-- [ ] Single binary deployment with executable, HTML, CSS, JavaScript all bundled in.
+- [x] Single binary deployment with executable, HTML, CSS, JavaScript all bundled in.
   - [ ] Mac
   - [ ] Linux
   - [ ] X86
@@ -64,6 +64,13 @@ Features
 - Backend can read binary formats (protobuf, Arrow).
 - Backend -> frontend streaming with binary format (arrow/CBOR/whatever)
 - Front-end multiple panels for plots.
+  - This means the plot div must be created dynamically (which is mostly easy).
+  - Splitting layout is relatively easy with flexbox, but requires a bit of finesse with respect to the height and width and expansion rules.
+  - However, resizing the layout is more difficult.
+  - Once the layout is resized, exporting and importing the layout is relatively annoying.
+  - This also means the backend options becomes meaningless. Things like the title needs to be duplicated multiple times.
+    - Likely a config file can be passed to the backend which is then fed to the frontend which contains both the layout and the chart options.
+
 
 Development setup
 -----------------
