@@ -10,24 +10,49 @@
     <div id="container">
       <div id="main">
         <div class="panel">
-          <div class="chart-container" style="position: relative; height: 95vh; width: 95vw">
-            <canvas id="myChart"></canvas>
+          <div class="title-bar">
+            <div class="title-text">
+              Plot title that is really really really really really really really long
+             </div>
+
+            <div class="button-bar">
+              <button class="screenshot">
+                <i class="fa-solid fa-camera" title="Save image"></i>
+              </button>
+              <button class="reset-zoom">
+                <i class="fa-solid fa-expand" title="Reset zoom"></i>
+              </button>
+              <button class="zoom">
+                <i class="fa-solid fa-magnifying-glass" title="Zoom"></i>
+              </button>
+              <button class="pan">
+                <i class="fa-solid fa-arrows-up-down-left-right" title="Pan"></i>
+              </button>
+              <button class="settings">
+                <i class="fa-solid fa-gear" title="Settings"></i>
+              </button>
+            </div>
+          </div>
+          <div class="chart-area">
+            <div class="chartjs-container">
+              <canvas id="myChart"></canvas>
+            </div>
           </div>
         </div>
       </div>
 
-      <div id="settings"></div>
-
       <div id="status">
-        <div id="status-text">Hello world</div>
+        <div class="title-text">
+          <!-- circle-dot -->
+          <!-- fa-triangle-exclamation -->
+          <i class="fa-regular fa-circle-dot red" id="live-indicator"></i>
+          <span id="status-text">
+            Live (N data rows/s)
+          </span>
 
-        <div id="status-button-bar">
-          <button id="btn-screenshot">
-            <i class="fa-solid fa-camera" title="Screenshot"></i>
-          </button>
-          <button id="btn-settings">
-            <i class="fa-solid fa-gear" title="Settings"></i>
-          </button>
+        </div>
+
+        <div class="button-bar">
           <button id="btn-play" style="display: none">
             <i class="fa-solid fa-play" title="Play"></i>
           </button>
