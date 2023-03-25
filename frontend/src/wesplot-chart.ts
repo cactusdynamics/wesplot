@@ -65,17 +65,19 @@ const default_config: ChartConfiguration<"scatter"> = {
 };
 
 export class WesplotChart {
-  ctx: HTMLCanvasElement;
   private _config: ChartConfiguration<"scatter"> | undefined;
   private _metadata: Metadata;
   private _chart: Chart;
 
   // Normal signature with defaults
-  constructor(ctx: HTMLCanvasElement, metadata: Metadata) {
-    this.ctx = ctx;
+  constructor(panel: HTMLElement, metadata: Metadata) {
+    const ctx = panel?.getElementsByTagName("canvas")[0]! as HTMLCanvasElement;
+    const title = panel.getElementsByClassName("title-text")[0];
     this._metadata = metadata;
     this._config = cloneDeep(default_config); // Deep copy
 
+    // Set title
+    title.textContent = metadata.ChartOptions.Title;
     // Merge in config parameters from metadata
     merge(this._config, {
       options: {
@@ -87,9 +89,6 @@ export class WesplotChart {
             title: { text: metadata.ChartOptions.YLabel },
             ticks: { callback: this.addUnits.bind(this) },
           },
-        },
-        plugins: {
-          title: { text: metadata.ChartOptions.Title },
         },
       },
     });

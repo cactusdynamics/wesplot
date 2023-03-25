@@ -6,9 +6,9 @@ import { WesplotChart } from "./wesplot-chart";
 async function main() {
   const response = await fetch(`http://${location.hostname}:8080/metadata`);
   const metadata: Metadata = await response.json();
-  const ctx = document.getElementById("myChart")! as HTMLCanvasElement;
+  const main_panel = document.getElementById("panel");
 
-  const chart = new WesplotChart(ctx, metadata);
+  const chart = new WesplotChart(main_panel, metadata);
 
   const hostname = `ws://${location.hostname}:8080/ws`;
   console.log(`connecting to ${hostname}`);
