@@ -1,0 +1,43 @@
+div.title-text {
+  flex: 1 1 auto;
+
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* TODO: make expand this on click? */
+div.title-text:active {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: initial;
+  height: auto;
+}
+
+div.button-bar {
+  display: flex;
+  flex-direction: row;
+
+  flex: 0 0 auto;
+  height: 100%;
+  align-items: center;
+  gap: 3px;
+}
+
+div.button-bar button {
+  height: 100%;
+  border: 0;
+  border-radius: 5px;
+  background-color: rgb(208, 208, 208);
+  height: 24px;
+  width: 24px;
+  text-align: center;
+}
+
+div.button-bar button:hover {
+  background-color: rgb(191, 191, 191);
+}
+
+div.button-bar button:active {
+  padding-top: 3px;
+}

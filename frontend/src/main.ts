@@ -1,6 +1,5 @@
-import "./app.css";
-import "@fortawesome/fontawesome-free/css/fontawesome.css";
-import "@fortawesome/fontawesome-free/css/solid.css";
+import "./styles/app.css";
+
 import { DataRow, Metadata } from "./types";
 import { WesplotChart } from "./wesplot-chart";
 

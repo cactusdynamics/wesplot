@@ -1,0 +1,59 @@
+@import "@fortawesome/fontawesome-free/css/fontawesome.css";
+@import "@fortawesome/fontawesome-free/css/solid.css";
+@import "@fortawesome/fontawesome-free/css/regular.css";
+
+@import "./bar.css";
+@import "./panel.css";
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 16px;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+/* A column-oriented flexbox system */
+/*
+ * min-height and min-width needs to set to 0 otherwise internal elements won't
+ * resize, which mean the plots won't resize when the window gets smaller. See
+ * https://stackoverflow.com/questions/36247140/why-dont-flex-items-shrink-past-content-size
+ */
+div#container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main container should take up as much space as possible */
+div#container div#main {
+  min-height: 0;
+  min-width: 0;
+
+  flex: 1 1 auto;
+}
+
+/* The status bar should take as little space as possible, and is itself a row-oriented flexbox */
+div#container div#status {
+  background-color: bisque;
+  display: flex;
+  flex-direction: row;
+
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  align-items: center;
+}
+
+div#container div#status .title-text {
+  font-size: 12px;
+}
+
+#live-indicator {
+  vertical-align: middle;
+}
+
+.red {
+  color: red;
+}
