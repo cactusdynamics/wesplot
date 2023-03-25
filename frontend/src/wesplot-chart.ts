@@ -107,12 +107,12 @@ export class WesplotChart {
     this._chart = new Chart(ctx, this._config);
   }
 
-  addUnits(value: number, _index: unknown, _ticks: unknown) {
+  addUnits(value: string | number, _index: unknown, _ticks: unknown) {
     if (!this._metadata.YUnit) {
       return value; // Don't append space if no unit is provided
     }
     if (typeof value === "number") {
-      return `${value.toFixed(3)} ${!this._metadata.YUnit}`; // TODO: fix this
+      return `${value.toFixed(3)} ${this._metadata.YUnit}`; // TODO: fix this
     }
     return `${value} ${!this._metadata.YUnit}`;
   }
