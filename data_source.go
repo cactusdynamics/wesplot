@@ -124,7 +124,7 @@ func (s *CsvDataSource) interpretRawData(line []string) (DataRow, error) {
 	var dataRow DataRow
 	// TODO: timestamp feature is not tested.
 	if s.timestampColumn < 0 {
-		dataRow.Timestamp = float64(time.Now().UnixMilli()) / 1000
+		dataRow.Timestamp = float64(time.Now().UnixMilli())
 	}
 
 	for i, value := range line {

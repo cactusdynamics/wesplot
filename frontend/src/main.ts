@@ -3,21 +3,29 @@ import "@fortawesome/fontawesome-free/css/fontawesome.css";
 import "@fortawesome/fontawesome-free/css/solid.css";
 import { merge } from "lodash";
 import { Chart, ChartConfiguration } from "chart.js/auto";
+import zoomPlugin from "chartjs-plugin-zoom";
+import "chartjs-adapter-date-fns";
+
+Chart.register(zoomPlugin);
 
 type DataRow = {
   Timestamp: number;
   Data: number[];
 };
 
-interface DataItem {
-  value: [number, number];
+interface ChartOptions {
+  Title: string;
+  XLabel: string;
+  YLabel: string;
+  YMin: number;
+  YMax: number;
 }
 
 interface Metadata {
   WindowSize: number;
   Columns: string[];
   YUnit: string;
-  // EChartsOption: echarts.EChartsOption;
+  ChartOptions: ChartOptions;
 }
 
 async function main() {
@@ -37,25 +45,35 @@ async function main() {
         x: {
           title: {
             display: true,
-            text: "X label",
+            text: metadata.ChartOptions.XLabel,
           },
+          type: "time",
         },
         y: {
           beginAtZero: true,
           title: {
             display: true,
-            text: "Y label",
+            text: metadata.ChartOptions.YLabel,
           },
           ticks: {
             // Include a unit
-            callback: (value, _index, _ticks) => `${value} bananas`,
+            callback: (value, _index, _ticks) => {
+              if (!metadata.YUnit) {
+                return value;
+              }
+              if (typeof value === "number") {
+                return `${value.toFixed(3)} ${metadata.YUnit}`; // TODO: fix this
+              }
+              return `${value} ${metadata.YUnit}`;
+            },
+            precision: 3,
           },
         },
       },
       plugins: {
         title: {
           display: true,
-          text: "Title",
+          text: metadata.ChartOptions.Title,
           font: {
             size: 20,
           },
@@ -65,6 +83,21 @@ async function main() {
         },
         legend: {
           position: "bottom",
+        },
+        zoom: {
+          zoom: {
+            wheel: {
+              enabled: true,
+            },
+            pinch: {
+              enabled: true,
+            },
+            mode: "xy",
+          },
+          pan: {
+            enabled: true,
+            mode: "xy",
+          },
         },
       },
     },

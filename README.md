@@ -1,5 +1,4 @@
-wesplot
-=======
+# wesplot
 
 A real time plotting tool that takes stdin data and pipes it into websocket and
 into a JavaScript interactive chart. Usable both on a local computer and on a
@@ -7,8 +6,7 @@ remote server.
 
 It's inspired by ttyplot except we leverage the power of the web. Amazing.
 
-Features
---------
+## Features
 
 - [ ] Ability to stream data from stdin and plot in the browser
   - [ ] There can many time series in a single data stream.
@@ -55,6 +53,8 @@ Features
   - [ ] Zoom, pan, freeze limits, restore to default view
   - [ ] SVG export
   - [ ] Cached size
+  - [ ] Consistent lodash versions
+  - [ ] Chart.js tree-shaking
 
 ### Long term goals
 
@@ -63,8 +63,7 @@ Features
 - Backend -> frontend streaming with binary format (arrow/CBOR/whatever)
 - Front-end multiple panels for plots.
 
-Development setup
------------------
+## Development setup
 
 - Make sure you have Python 3 installed.
 - Make sure you install [Go](https://go.dev/).
