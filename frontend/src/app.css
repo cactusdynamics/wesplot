@@ -70,6 +70,3 @@ div.panel {
   height: 100%; /* For now this is 100%, later we can make this dynamically generated to have splittable panels */
 }
 
-div.plot {
-  height: 100%;
-}
