@@ -29,9 +29,6 @@ const default_config: ChartConfiguration<"scatter"> = {
         title: {
           display: true,
         },
-        ticks: {
-          precision: 3,
-        },
       },
     },
     plugins: {
@@ -165,6 +162,9 @@ export class WesplotChart {
       });
     }
 
+    if (metadata.Columns.length < 2) {
+      this._config.options!.plugins!.legend!.display = false;
+    }
     // Create the chart
     this._chart = new Chart(this._canvas, this._config);
 
@@ -192,16 +192,19 @@ export class WesplotChart {
     this._chart.update("none");
   }
 
-  private addUnits(value: string | number, _index: unknown, _ticks: unknown) {
-    if (!this._metadata.YUnit) {
-      return value; // Don't append space if no unit is provided
-    }
-
+  private addUnits(value: number | string, _index: unknown, _ticks: unknown) {
     if (typeof value === "number") {
-      return `${value.toFixed(3)} ${this._metadata.YUnit}`; // TODO: fix this
+      if (!this._metadata.YUnit) {
+        // Don't append space if no unit is provided
+        return value.toPrecision(5).replace(/(?:\.0+|(\.\d+?)0+)$/, "$1");
+      }
+      return `${value.toPrecision(5).replace(/(?:\.0+|(\.\d+?)0+)$/, "$1")} ${
+        this._metadata.YUnit
+      }`;
     }
 
-    return `${value} ${!this._metadata.YUnit}`;
+    return `${value.replace(/(?:\.0+|(\.\d+?)0+)$/, "$1")} ${!this._metadata
+      .YUnit}`;
   }
 
   private screenshot(_event: unknown) {
