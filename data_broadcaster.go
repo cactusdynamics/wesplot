@@ -63,6 +63,17 @@ func (d *DataBroadcaster) Start(ctx context.Context) {
 		// memory model)
 		d.streamEnded.Store(true)
 
+		// Maybe we should deregister and close the currently registered channels.
+		// However, to do this safely, more analysis is needed on the concurrency
+		// and see if there are bugs.
+		// Also caching the end message in the cache will allow newly connected
+		// clients to know this easier.
+		// TODO: check the above.
+		d.cacheAndBroadcastData(ctx, DataRow{
+			streamEnded: true,
+			streamErr:   err,
+		})
+
 		d.logger.WithField("numDataRowsEmitted", d.numDataRowsEmitted).WithError(err).Info("data broadcaster stream ended")
 	}()
 }
@@ -127,8 +138,9 @@ func (d *DataBroadcaster) RegisterChannel(ctx context.Context, c chan<- DataRow)
 }
 
 // Deregister a channel to get data updates. Called when a websocket client
-// disconnects. Note: the channel shouldn't be closed until this method
-// returns, as it will cause panics.
+// disconnects or when the input stream closes. Note: the channel shouldn't be
+// closed until this method returns (if the input is still open), as it may
+// cause panics otherwise.
 //
 // - ctx: is the HTTP call context.
 // - c: is the channel to send data on. This should be the same channel as the one passed to RegisterChannel to successfully deregister.
@@ -203,7 +215,9 @@ func (d *DataBroadcaster) cacheAndBroadcastData(traceCtx context.Context, dataRo
 }
 
 func (d *DataBroadcaster) pushBufferedDataToChannel(c chan<- DataRow) {
-	for _, dataRow := range d.dataBuffer.ReadAllOrdered() {
+	bufferedData := d.dataBuffer.ReadAllOrdered()
+
+	for _, dataRow := range bufferedData {
 		c <- dataRow
 	}
 }
