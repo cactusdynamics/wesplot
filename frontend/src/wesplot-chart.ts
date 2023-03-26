@@ -53,6 +53,7 @@ const default_config: ChartConfiguration<"scatter"> = {
 
 export class WesplotChart {
   private _config: ChartConfiguration<"scatter"> | undefined;
+  private _canvas: HTMLCanvasElement;
   private _metadata: Metadata;
   private _chart: Chart;
   private _buttons: ChartButtons;
@@ -70,10 +71,10 @@ export class WesplotChart {
       drag: {
         enabled: false,
       },
-      mode: "xy",
+      mode: "x",
     },
     pan: {
-      enabled: true,
+      enabled: true, // This must be initialized to true, or it won't work
       mode: "xy",
     },
   };
@@ -83,7 +84,9 @@ export class WesplotChart {
     // Get relevant HTML elements
     // ==========================
 
-    const ctx = panel.getElementsByTagName("canvas")[0]! as HTMLCanvasElement;
+    this._canvas = panel.getElementsByTagName(
+      "canvas"
+    )[0]! as HTMLCanvasElement;
     this._title = panel.getElementsByClassName("title-text")[0]!;
     this._buttons = {
       screenshot: panel.getElementsByClassName(
@@ -154,11 +157,11 @@ export class WesplotChart {
     }
 
     // Create the chart
-    this._chart = new Chart(ctx, this._config);
+    this._chart = new Chart(this._canvas, this._config);
 
     // TODO: Possible upstream bug, cannot pan if pan is not initially enabled?
-    // For now, set pan enabled by default on...
-    this.setZoomPan("pan", true);
+    // For now, set pan enabled by default on and immediately disable it...
+    this.setZoomPan("pan", false);
   }
 
   setTitle(title: string) {
@@ -191,9 +194,23 @@ export class WesplotChart {
   }
 
   private screenshot(_event: unknown) {
+    // Set canvas background color to white for the screenshot
+    const context = this._canvas.getContext("2d")!;
+    context.save();
+    context.globalCompositeOperation = "destination-over";
+    context.fillStyle = "white";
+    context.fillRect(0, 0, this._canvas.width, this._canvas.height);
+    context.restore(); // This will paint the background white until the next chart update
+
     var a = document.createElement("a");
-    a.href = this._chart.toBase64Image();
-    a.download = "wesplot_screenshot.png";
+    // a.href = this._chart.toBase64Image();
+    a.href = this._canvas.toDataURL("image/png", 1.0);
+    a.download = `wesplot_${this._metadata.ChartOptions.Title}.png`;
+
+    // Trigger the download
+    a.click();
+
+    this._chart.update("none"); // Update the chart to reset the background color
   }
 
   private resetView(_event: unknown) {
