@@ -14,6 +14,11 @@ import (
 
 const bufferSize = 10000
 
+type StreamEndedMessage struct {
+	StreamEnded bool
+	StreamError error
+}
+
 type HttpServer struct {
 	dataBroadcaster *DataBroadcaster
 	addr            string
@@ -39,6 +44,7 @@ func NewHttpServer(dataBroadcaster *DataBroadcaster, addr string, metadata Metad
 	s.mux.Handle("/", http.FileServer(http.FS(subFS)))
 	s.mux.HandleFunc("/ws", s.handleWebSocket)
 	s.mux.HandleFunc("/metadata", s.handleMetadata)
+	s.mux.HandleFunc("/errors", s.handleErrors)
 
 	return s
 }
@@ -81,30 +87,48 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 			return nil
 		}
 
+		logger := s.logger.WithField("channel", channel)
+
 		for {
 			select {
 			case dataRow, open := <-channel:
 				if !open {
 					// Not sure why this would ever happen, but sure
 					// TODO: maybe panic here
-					s.logger.Warn("data channel closed, closing websocket")
+					logger.Warn("data channel closed, closing websocket")
 					c.Close(websocket.StatusNormalClosure, "channel closed")
+					return
+				}
+
+				if dataRow.streamEnded {
+					// Stream has ended. We should close the the websocket. The client
+					// should issue another request to /errors after the websocket
+					// connection closes to see if there are any stream errors so it can
+					// display it.
+					logger.Info("stream ended, flushing and then closing websocket connection")
+					err := flushBufferToWebsocket()
+					if err != nil {
+						logger.Warn("websocket flush failed and closed")
+						return
+					}
+
+					c.Close(websocket.StatusNormalClosure, "")
 					return
 				}
 
 				dataBuffer = append(dataBuffer, dataRow)
 				if len(dataBuffer) >= bufferItemCapacity || time.Now().Sub(lastSendTime) > bufferTimeCapacity {
-					s.logger.WithField("buflen", len(dataBuffer)).Debug("buffer capacity reached, flushing")
+					logger.WithField("buflen", len(dataBuffer)).Debug("buffer capacity reached, flushing")
 					err := flushBufferToWebsocket()
 					if err != nil {
 						// At this point the websocket closed, so we don't even need to send anything
-						s.logger.Warn("websocket write failed and closed")
+						logger.Warn("websocket write failed and closed")
 						return
 					}
 				}
 
 			case <-ctx.Done(): // client connection closes causes the req.Context to be canceled?
-				s.logger.Info("client closed connection or context canceled")
+				logger.Info("client closed connection or context canceled")
 				c.Close(websocket.StatusNormalClosure, "")
 				return
 			}
@@ -128,6 +152,26 @@ func (s *HttpServer) handleMetadata(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Access-Control-Allow-Headers", "content-type")
 	w.Header().Add("Access-Control-Allow-Methods", "*")
 	err := json.NewEncoder(w).Encode(s.metadata)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+}
+
+func (s *HttpServer) handleErrors(w http.ResponseWriter, req *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	w.Header().Add("Access-Control-Allow-Origin", "*")
+	w.Header().Add("Access-Control-Allow-Headers", "content-type")
+	w.Header().Add("Access-Control-Allow-Methods", "*")
+
+	endedMsg := s.dataBroadcaster.streamEnded.Load()
+	var streamEndedMessage StreamEndedMessage
+	if endedMsg {
+		streamEndedMessage.StreamEnded = true
+		streamEndedMessage.StreamError = s.dataBroadcaster.err
+	}
+
+	err := json.NewEncoder(w).Encode(endedMsg)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

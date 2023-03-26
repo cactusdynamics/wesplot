@@ -30,6 +30,9 @@ type StringReader interface {
 type DataRow struct {
 	X  float64
 	Ys []float64
+
+	streamEnded bool
+	streamErr   error
 }
 
 // When Read is called, return the DataRow.
