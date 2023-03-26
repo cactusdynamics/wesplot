@@ -1,8 +1,10 @@
 import { Chart, ChartConfiguration } from "chart.js/auto";
 import zoomPlugin from "chartjs-plugin-zoom";
 import "chartjs-adapter-date-fns";
-import { DataRow, Metadata } from "./types";
+import { ChartButtons, DataRow, Metadata } from "./types";
 import { cloneDeep, merge } from "lodash";
+import classes from "./styles/dynamic-styles.module.css";
+import type { ZoomPluginOptions } from "chartjs-plugin-zoom/types/options";
 
 Chart.defaults.font.size = 16;
 Chart.register(zoomPlugin);
@@ -45,21 +47,6 @@ const default_config: ChartConfiguration<"scatter"> = {
       legend: {
         position: "bottom",
       },
-      zoom: {
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          mode: "xy",
-        },
-        pan: {
-          enabled: true,
-          mode: "xy",
-        },
-      },
     },
   },
 };
@@ -68,16 +55,80 @@ export class WesplotChart {
   private _config: ChartConfiguration<"scatter"> | undefined;
   private _metadata: Metadata;
   private _chart: Chart;
+  private _buttons: ChartButtons;
+  private _title: Element;
+  private _zoom_active: boolean;
+  private _pan_active: boolean;
+  private _zoom_plugin_options: ZoomPluginOptions = {
+    zoom: {
+      wheel: {
+        enabled: false,
+      },
+      pinch: {
+        enabled: false,
+      },
+      drag: {
+        enabled: false,
+      },
+      mode: "xy",
+    },
+    pan: {
+      enabled: true,
+      mode: "xy",
+    },
+  };
 
-  // Normal signature with defaults
   constructor(panel: HTMLElement, metadata: Metadata) {
-    const ctx = panel?.getElementsByTagName("canvas")[0]! as HTMLCanvasElement;
-    const title = panel.getElementsByClassName("title-text")[0];
+    // ==========================
+    // Get relevant HTML elements
+    // ==========================
+
+    const ctx = panel.getElementsByTagName("canvas")[0]! as HTMLCanvasElement;
+    this._title = panel.getElementsByClassName("title-text")[0]!;
+    this._buttons = {
+      screenshot: panel.getElementsByClassName(
+        "screenshot"
+      )[0]! as HTMLButtonElement,
+
+      resetzoom: panel.getElementsByClassName(
+        "reset-zoom"
+      )[0]! as HTMLButtonElement,
+
+      zoom: panel.getElementsByClassName("zoom")[0]! as HTMLButtonElement,
+
+      pan: panel.getElementsByClassName("pan")[0]! as HTMLButtonElement,
+
+      settings: panel.getElementsByClassName(
+        "settings"
+      )[0]! as HTMLButtonElement,
+    };
+
+    this._buttons.screenshot.addEventListener(
+      "click",
+      this.screenshot.bind(this)
+    );
+    this._buttons.resetzoom.addEventListener(
+      "click",
+      this.resetView.bind(this)
+    );
+    this._buttons.zoom.addEventListener("click", this.toggleZoom.bind(this));
+    this._buttons.pan.addEventListener("click", this.togglePan.bind(this));
+    this._buttons.settings.addEventListener("click", this.settings.bind(this));
+
+    this.setTitle(metadata.ChartOptions.Title);
+
+    // Zoom and pan are not enabled by default
+    this._zoom_active = false;
+    this._pan_active = false;
+
+    // =======================
+    // Set chart configuration
+    // =======================
+
     this._metadata = metadata;
     this._config = cloneDeep(default_config); // Deep copy
 
-    // Set title
-    title.textContent = metadata.ChartOptions.Title;
+    this._config.options!.plugins!.zoom = this._zoom_plugin_options;
     // Merge in config parameters from metadata
     merge(this._config, {
       options: {
@@ -104,23 +155,14 @@ export class WesplotChart {
 
     // Create the chart
     this._chart = new Chart(ctx, this._config);
+
+    // TODO: Possible upstream bug, cannot pan if pan is not initially enabled?
+    // For now, set pan enabled by default on...
+    this.setZoomPan("pan", true);
   }
 
-  addUnits(value: string | number, _index: unknown, _ticks: unknown) {
-    if (!this._metadata.YUnit) {
-      return value; // Don't append space if no unit is provided
-    }
-    if (typeof value === "number") {
-      return `${value.toFixed(3)} ${this._metadata.YUnit}`; // TODO: fix this
-    }
-    return `${value} ${!this._metadata.YUnit}`;
-  }
-
-  get Config() {
-    return this._config!;
-  }
-  set Config(config: ChartConfiguration<"scatter">) {
-    this._config = config;
+  setTitle(title: string) {
+    this._title.textContent = title;
   }
 
   update(rows: DataRow[]) {
@@ -134,8 +176,71 @@ export class WesplotChart {
         }
       }
     }
-
     // Do not animate
     this._chart.update("none");
   }
+
+  private addUnits(value: string | number, _index: unknown, _ticks: unknown) {
+    if (!this._metadata.YUnit) {
+      return value; // Don't append space if no unit is provided
+    }
+    if (typeof value === "number") {
+      return `${value.toFixed(3)} ${this._metadata.YUnit}`; // TODO: fix this
+    }
+    return `${value} ${!this._metadata.YUnit}`;
+  }
+
+  private screenshot(_event: unknown) {
+    var a = document.createElement("a");
+    a.href = this._chart.toBase64Image();
+    a.download = "wesplot_screenshot.png";
+  }
+
+  private resetView(_event: unknown) {
+    this._chart.resetZoom();
+  }
+
+  private toggleZoom(_event: unknown) {
+    this.setZoomPan("zoom", !this._zoom_active);
+  }
+
+  private togglePan(_event: unknown) {
+    this.setZoomPan("pan", !this._pan_active);
+  }
+
+  private setZoomPan(type: "zoom" | "pan", value: boolean) {
+    if (type === "zoom") {
+      this._zoom_active = value;
+      if (value && this._pan_active) {
+        this._pan_active = false;
+      }
+    } else {
+      this._pan_active = value;
+      if (value && this._zoom_active) {
+        this._zoom_active = false;
+      }
+    }
+
+    if (this._zoom_active) {
+      this._buttons.zoom.classList.add(classes["button-on"]);
+    } else {
+      this._buttons.zoom.classList.remove(classes["button-on"]);
+    }
+
+    if (this._pan_active) {
+      this._buttons.pan.classList.add(classes["button-on"]);
+    } else {
+      this._buttons.pan.classList.remove(classes["button-on"]);
+    }
+
+    this._zoom_plugin_options.zoom!.drag!.enabled = this._zoom_active;
+    this._zoom_plugin_options.zoom!.pinch!.enabled = this._zoom_active;
+    this._zoom_plugin_options.zoom!.wheel!.enabled = this._zoom_active;
+
+    this._zoom_plugin_options.pan!.enabled = this._pan_active;
+    console.log(this._chart.config);
+    this._chart.update("none");
+  }
+
+  private settings(_event: unknown) {}
 }

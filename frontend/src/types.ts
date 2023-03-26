@@ -17,3 +17,11 @@ export interface Metadata {
   YUnit: string;
   ChartOptions: ChartOptions;
 }
+
+export interface ChartButtons {
+  zoom: HTMLButtonElement;
+  resetzoom: HTMLButtonElement;
+  pan: HTMLButtonElement;
+  screenshot: HTMLButtonElement;
+  settings: HTMLButtonElement;
+}
