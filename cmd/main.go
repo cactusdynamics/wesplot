@@ -14,10 +14,12 @@ import (
 var options struct {
 	Verbose bool `short:"v" long:"verbose" description:"Show debug logs"`
 
-	Title string   `short:"t" long:"title" description:"Title of the plot"`
-	YMin  *float64 `short:"M" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
-	YMax  *float64 `short:"m" long:"ymax" description:"The max value for y (default: auto scaling)"`
-	YUnit string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
+	Title  string   `short:"t" long:"title" default:"Plot" description:"Title of the plot. Defaults to 'Plot'"`
+	YMin   *float64 `short:"M" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
+	YMax   *float64 `short:"m" long:"ymax" description:"The max value for y (default: auto scaling)"`
+	YUnit  string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
+	XLabel string   `long:"xlabel" description:"Label for the X axis"`
+	YLabel string   `long:"ylabel" description:"Label for the X axis"`
 
 	XIndex int `short:"x" long:"xindex" default:"-1" description:"the index for the x column. if not specified, the x value is generated as the receive timestamp. If specified, this is will let the front end know the x value is not a timestamp. Mutually exclusive with --tindex."`
 	TIndex int `long:"tindex" default:"-1" description:"the index for the timestamp column. if not specified, the x value is generated as the receive timestamp. Mutually exclusive with --xindex."`
@@ -97,9 +99,9 @@ func main() {
 		XIsTimestamp: options.xIsTimestamp,
 		YUnit:        options.YUnit,
 		ChartOptions: wesplot.ChartOptions{
-			Title:  "Plot title",
-			XLabel: "X label",
-			YLabel: "Y label",
+			Title:  options.Title,
+			XLabel: options.XLabel,
+			YLabel: options.YLabel,
 			YMin:   options.YMin,
 			YMax:   options.YMax,
 		},

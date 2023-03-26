@@ -5,10 +5,10 @@ export type DataRow = {
 
 interface ChartOptions {
   Title: string;
-  XLabel: string;
-  YLabel: string;
-  YMin: number;
-  YMax: number;
+  XLabel?: string;
+  YLabel?: string;
+  YMin?: number;
+  YMax?: number;
 }
 
 export interface Metadata {

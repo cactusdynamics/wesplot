@@ -118,7 +118,9 @@ export class WesplotChart {
     this._buttons.pan.addEventListener("click", this.togglePan.bind(this));
     this._buttons.settings.addEventListener("click", this.settings.bind(this));
 
-    this.setTitle(metadata.ChartOptions.Title);
+    if (metadata.ChartOptions.Title) {
+      this.setTitle(metadata.ChartOptions.Title);
+    }
 
     // Zoom and pan are not enabled by default
     this._zoom_active = false;
@@ -194,9 +196,11 @@ export class WesplotChart {
     if (!this._metadata.YUnit) {
       return value; // Don't append space if no unit is provided
     }
+
     if (typeof value === "number") {
       return `${value.toFixed(3)} ${this._metadata.YUnit}`; // TODO: fix this
     }
+
     return `${value} ${!this._metadata.YUnit}`;
   }
 
