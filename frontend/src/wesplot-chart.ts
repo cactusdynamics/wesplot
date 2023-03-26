@@ -131,7 +131,14 @@ export class WesplotChart {
     this._metadata = metadata;
     this._config = cloneDeep(default_config); // Deep copy
 
+    if (!this._metadata.XIsTimestamp) {
+      this._config.options!.scales!.x!.type = "linear";
+    }
+
+    // We need to maintain a stable reference to zoom plugin options so it can
+    // be accessed and mutated in the zoom/pan button handlers.
     this._config.options!.plugins!.zoom = this._zoom_plugin_options;
+
     // Merge in config parameters from metadata
     merge(this._config, {
       options: {
@@ -172,7 +179,7 @@ export class WesplotChart {
     for (const [i, _] of this._metadata.Columns.entries()) {
       const data = this._chart.data.datasets[i].data;
       for (const row of rows) {
-        data.push({ x: row.Timestamp, y: row.Data[i] });
+        data.push({ x: row.X, y: row.Ys[i] });
         this._chart.data.datasets[i].data = data;
         if (data.length > this._metadata.WindowSize) {
           data.shift();

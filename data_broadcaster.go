@@ -11,8 +11,8 @@ import (
 )
 
 type DataBroadcaster struct {
-	// The data source to be read from.
-	source DataSource
+	// The data row reader to be read from.
+	input DataRowReader
 
 	mutex sync.Mutex
 	wg    sync.WaitGroup
@@ -38,9 +38,9 @@ type DataBroadcaster struct {
 	logger logrus.FieldLogger
 }
 
-func NewDataBroadcaster(source DataSource, bufferCapacity int) *DataBroadcaster {
+func NewDataBroadcaster(input DataRowReader, bufferCapacity int) *DataBroadcaster {
 	return &DataBroadcaster{
-		source: source,
+		input: input,
 
 		mutex:                 sync.Mutex{},
 		channelsForLiveUpdate: make([]chan<- DataRow, 0),
@@ -158,7 +158,7 @@ func (d *DataBroadcaster) run(ctx context.Context) error {
 		traceCtx, task := trace.NewTask(ctx, "DataBroadcasterLoop")
 
 		trace.WithRegion(traceCtx, "DataSourceRead", func() {
-			dataRow, err = d.source.Read(traceCtx)
+			dataRow, err = d.input.Read(traceCtx)
 		})
 
 		if err == errIgnoreThisRow {
@@ -187,8 +187,8 @@ func (d *DataBroadcaster) cacheAndBroadcastData(traceCtx context.Context, dataRo
 	defer d.mutex.Unlock()
 
 	d.logger.WithFields(logrus.Fields{
-		"timestamp": dataRow.Timestamp,
-		"data":      dataRow.Data,
+		"x":  dataRow.X,
+		"ys": dataRow.Ys,
 	}).Debug("new data row")
 
 	trace.WithRegion(traceCtx, "Cache", func() {

@@ -1,6 +1,6 @@
 export type DataRow = {
-  Timestamp: number;
-  Data: number[];
+  X: number;
+  Ys: number[];
 };
 
 interface ChartOptions {
@@ -14,6 +14,7 @@ interface ChartOptions {
 export interface Metadata {
   WindowSize: number;
   Columns: string[];
+  XIsTimestamp: boolean;
   YUnit: string;
   ChartOptions: ChartOptions;
 }
