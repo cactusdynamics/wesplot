@@ -9,6 +9,7 @@ import random
 parser = argparse.ArgumentParser()
 parser.add_argument("-n", "--num-columns", type=int, default=1)
 parser.add_argument("--csv", action="store_true", default=False)
+parser.add_argument("--timestamp", action="store_true", default=False)
 args = parser.parse_args()
 
 amplitude = 10
@@ -34,6 +35,10 @@ while True:
       str(amplitude * math.sin(2 * math.pi * (time.time() - start) / period) + shift + random.random() * amplitude_noise * math.sin(2 * math.pi * (time.time() - start) / random.random() * period_noise))
     )
 
-  print(separator.join(data))
+  timestamp = ""
+  if args.timestamp:
+    timestamp = "{}{}".format(time.time(), separator)
+
+  print("{}{}".format(timestamp, separator.join(data)))
   sys.stdout.flush()
   time.sleep(sleep_time)
