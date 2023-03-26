@@ -1,19 +1,20 @@
 export type DataRow = {
-  Timestamp: number;
-  Data: number[];
+  X: number;
+  Ys: number[];
 };
 
 interface ChartOptions {
   Title: string;
-  XLabel: string;
-  YLabel: string;
-  YMin: number;
-  YMax: number;
+  XLabel?: string;
+  YLabel?: string;
+  YMin?: number;
+  YMax?: number;
 }
 
 export interface Metadata {
   WindowSize: number;
   Columns: string[];
+  XIsTimestamp: boolean;
   YUnit: string;
   ChartOptions: ChartOptions;
 }
