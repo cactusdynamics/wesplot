@@ -177,7 +177,7 @@ export class WesplotChart {
     this._title.textContent = title;
   }
 
-  update(rows: DataRow[]) {
+  update(rows: DataRow[], paused: boolean) {
     for (const [i, _] of this._metadata.Columns.entries()) {
       const data = this._chart.data.datasets[i].data;
       for (const row of rows) {
@@ -188,8 +188,11 @@ export class WesplotChart {
         }
       }
     }
-    // Do not animate
-    this._chart.update("none");
+    // Do not update visuals if paused
+    if (!paused) {
+      // "none" means do not animate, this looks weird with an updating chart
+      this._chart.update("none");
+    }
   }
 
   private addUnits(value: number | string, _index: unknown, _ticks: unknown) {
