@@ -164,14 +164,14 @@ func (s *HttpServer) handleErrors(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("Access-Control-Allow-Headers", "content-type")
 	w.Header().Add("Access-Control-Allow-Methods", "*")
 
-	endedMsg := s.dataBroadcaster.streamEnded.Load()
+	streamEnded := s.dataBroadcaster.streamEnded.Load()
 	var streamEndedMessage StreamEndedMessage
-	if endedMsg {
+	if streamEnded {
 		streamEndedMessage.StreamEnded = true
 		streamEndedMessage.StreamError = s.dataBroadcaster.err
 	}
 
-	err := json.NewEncoder(w).Encode(endedMsg)
+	err := json.NewEncoder(w).Encode(streamEndedMessage)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
