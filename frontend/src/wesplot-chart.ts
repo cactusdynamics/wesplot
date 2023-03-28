@@ -181,14 +181,13 @@ export class WesplotChart {
     for (const [i, _] of this._metadata.Columns.entries()) {
       const data = this._chart.data.datasets[i].data;
       for (const row of rows) {
-        data.push({ x: row.X, y: row.Ys[i] });
-        this._chart.data.datasets[i].data = data;
+        data.push([row.X, row.Ys[i]]);
         if (data.length > this._metadata.WindowSize) {
           data.shift();
         }
       }
     }
-    // Do not animate
+    // "none" means do not animate, this looks weird with an updating chart
     this._chart.update("none");
   }
 
@@ -269,7 +268,6 @@ export class WesplotChart {
     this._zoom_plugin_options.zoom!.wheel!.enabled = this._zoom_active;
 
     this._zoom_plugin_options.pan!.enabled = this._pan_active;
-    console.log(this._chart.config);
     this._chart.update("none");
   }
 
