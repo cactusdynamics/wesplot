@@ -18,6 +18,7 @@ async function main() {
 
   // Pause button status
   let paused = false;
+  let row_buffer: DataRow[] = [];
 
   const handlePause = (_event: MouseEvent) => {
     paused = !paused;
@@ -29,6 +30,8 @@ async function main() {
       icon_elem.classList.add("fa-pause");
       icon_elem.classList.remove("fa-play");
       icon_elem.title = "Pause";
+      chart.update(row_buffer);
+      row_buffer = [];
     }
   };
 
@@ -59,7 +62,11 @@ async function main() {
 
   socket.addEventListener("message", (event) => {
     const rows: DataRow[] = JSON.parse(event.data);
-    chart.update(rows, paused);
+    if (paused) {
+      row_buffer.concat(rows);
+    } else {
+      chart.update(rows);
+    }
   });
 }
 
