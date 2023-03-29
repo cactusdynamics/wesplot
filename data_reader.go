@@ -133,7 +133,9 @@ func (r *RelaxedStringReader) Read(ctx context.Context) ([]string, error) {
 
 // Generates the current unix timestamp in seconds.
 func NowXGenerator(line []float64) float64 {
-	return float64(time.Now().Unix())
+	// Use Micro because we want to preserve the timestamp to at least millisecond
+	// accuracy. using time.Now().Unix() will truncate.
+	return float64(time.Now().UnixMicro()) / 1000000.0
 }
 
 // Creates a DataRowReader based on text input. Unrecognized/unparsable lines

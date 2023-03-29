@@ -2,8 +2,10 @@ package wesplot
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"runtime/trace"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -13,6 +15,8 @@ import (
 type DataBroadcaster struct {
 	// The data row reader to be read from.
 	input DataRowReader
+
+	teeMode bool
 
 	mutex sync.Mutex
 	wg    sync.WaitGroup
@@ -38,9 +42,11 @@ type DataBroadcaster struct {
 	logger logrus.FieldLogger
 }
 
-func NewDataBroadcaster(input DataRowReader, bufferCapacity int) *DataBroadcaster {
+func NewDataBroadcaster(input DataRowReader, bufferCapacity int, teeMode bool) *DataBroadcaster {
 	return &DataBroadcaster{
 		input: input,
+
+		teeMode: teeMode,
 
 		mutex:                 sync.Mutex{},
 		channelsForLiveUpdate: make([]chan<- DataRow, 0),
@@ -185,6 +191,18 @@ func (d *DataBroadcaster) run(ctx context.Context) error {
 		} else if err != nil {
 			task.End()
 			return err
+		}
+
+		if d.teeMode {
+			// Kind of inefficient, but probably OK.
+			dataLine := make([]string, 0, len(dataRow.Ys)+1)
+			dataLine = append(dataLine, fmt.Sprintf("%f", dataRow.X))
+
+			for _, y := range dataRow.Ys {
+				dataLine = append(dataLine, fmt.Sprintf("%f", y))
+			}
+
+			fmt.Println(strings.Join(dataLine, ","))
 		}
 
 		d.cacheAndBroadcastData(traceCtx, dataRow)
