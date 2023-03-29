@@ -28,7 +28,6 @@ const default_config: ChartConfiguration<"scatter"> = {
         type: "time",
       },
       y: {
-        beginAtZero: true,
         title: {
           display: true,
         },
@@ -186,7 +185,12 @@ export class WesplotChart {
     for (const [i, _] of this._metadata.Columns.entries()) {
       const data = this._chart.data.datasets[i].data;
       for (const row of rows) {
-        data.push([row.X, row.Ys[i]]);
+        let x = row.X;
+        if (this._metadata.XIsTimestamp) {
+          x *= 1000; // Server side seconds time in seconds. This is pretty inefficient tho.
+        }
+
+        data.push([x, row.Ys[i]]);
         if (data.length > this._metadata.WindowSize) {
           data.shift();
         }
