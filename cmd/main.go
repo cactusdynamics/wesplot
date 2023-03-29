@@ -62,6 +62,12 @@ func parseOptions() {
 		}
 	}
 
+	if options.YMin != nil && options.YMax != nil {
+		if *options.YMin >= *options.YMax {
+			panic("YMax must be greater than YMin")
+		}
+	}
+
 	// TODO: this code is kind of funky but OK.
 	if options.XIndex != -1 {
 		if options.TIndex != -1 {
