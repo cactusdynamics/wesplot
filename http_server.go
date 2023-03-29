@@ -122,7 +122,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 				}
 
 				dataBuffer = append(dataBuffer, dataRow)
-				if len(dataBuffer) >= bufferItemCapacity || time.Now().Sub(lastSendTime) > bufferTimeCapacity {
+				if len(dataBuffer) >= bufferItemCapacity || time.Since(lastSendTime) > bufferTimeCapacity {
 					logger.WithField("buflen", len(dataBuffer)).Debug("buffer capacity reached, flushing")
 					err := flushBufferToWebsocket()
 					if err != nil {
@@ -210,6 +210,8 @@ func (s *HttpServer) Run() error {
 
 	// These log lines don't need to be tagged (as that introduces more confusion)
 	url := fmt.Sprintf("http://%s:%d", s.host, s.port)
+	openBrowser(url)
+
 	if s.host == "0.0.0.0" {
 		ifaces, err := net.Interfaces()
 		if err != nil {
@@ -241,8 +243,6 @@ func (s *HttpServer) Run() error {
 	} else {
 		logrus.Info("Plot is accessible at: %s", url)
 	}
-
-	openBrowser(url)
 
 	server := http.Server{Addr: addr, Handler: s.mux}
 	return server.Serve(listener)
