@@ -2,7 +2,13 @@ package wesplot
 
 import (
 	"container/ring"
+
+	"golang.org/x/exp/constraints"
 )
+
+type Number interface {
+	constraints.Float | constraints.Integer
+}
 
 func Filter[T any](slice []T, predicate func(T) bool) []T {
 	filtered := make([]T, 0, len(slice))
@@ -12,6 +18,14 @@ func Filter[T any](slice []T, predicate func(T) bool) []T {
 		}
 	}
 	return filtered
+}
+
+func Min[T Number](a T, b T) T {
+	if a > b {
+		return b
+	}
+
+	return a
 }
 
 // Ring taken from https://github.com/Shopify/mybench/blob/main/ring.go

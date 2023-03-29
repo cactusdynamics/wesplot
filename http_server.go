@@ -72,7 +72,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 		// We buffer data for at least X milliseconds or if it reaches capacity before sending it to the client.
 		// Note: tune or allow configuration
 		const bufferTimeCapacity = 50 * time.Millisecond
-		const bufferItemCapacity = 3000
+		bufferItemCapacity := Min(s.metadata.WindowSize, 25000)
 		lastSendTime := time.Now()
 		dataBuffer := make([]DataRow, 0, bufferItemCapacity)
 
