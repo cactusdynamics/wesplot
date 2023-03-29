@@ -2,7 +2,9 @@ package wesplot
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/fs"
+	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -21,16 +23,19 @@ type StreamEndedMessage struct {
 
 type HttpServer struct {
 	dataBroadcaster *DataBroadcaster
-	addr            string
+	host            string
+	port            uint16
 	metadata        Metadata
 	mux             *http.ServeMux
 	logger          logrus.FieldLogger
 }
 
-func NewHttpServer(dataBroadcaster *DataBroadcaster, addr string, metadata Metadata) *HttpServer {
+func NewHttpServer(dataBroadcaster *DataBroadcaster, host string, port uint16, metadata Metadata) *HttpServer {
+
 	s := &HttpServer{
 		dataBroadcaster: dataBroadcaster,
-		addr:            addr,
+		host:            host,
+		port:            port,
 		metadata:        metadata,
 		mux:             http.NewServeMux(),
 		logger:          logrus.WithField("tag", "HttpServer"),
@@ -178,7 +183,67 @@ func (s *HttpServer) handleErrors(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (s *HttpServer) Run() {
-	logrus.Infof("starting HTTP server at http://%s", s.addr)
-	http.ListenAndServe(s.addr, s.mux)
+func (s *HttpServer) Run() error {
+	tries := 0
+	var addr string
+	var listener net.Listener
+	var err error
+
+	for {
+		if tries > 200 {
+			panic("tried 200 ports and they all failed?") // Not sure if this is needed
+		}
+
+		addr = fmt.Sprintf("%s:%d", s.host, s.port)
+		listener, err = net.Listen("tcp", addr)
+		if err != nil {
+			s.port++
+			tries++
+			// Really should try to distinguish which error is an address bind error.
+			// However not sure how to do this in a cross platform manner.
+			// TODO: fix me.
+			s.logger.WithError(err).Warnf("failed to listen on %s, trying %s:%d instead", addr, s.host, s.port)
+		} else {
+			break
+		}
+	}
+
+	// These log lines don't need to be tagged (as that introduces more confusion)
+	url := fmt.Sprintf("http://%s:%d", s.host, s.port)
+	if s.host == "0.0.0.0" {
+		ifaces, err := net.Interfaces()
+		if err != nil {
+			panic(fmt.Sprintf("cannot get network interfaces: %v", err))
+		}
+
+		logrus.Info("Plot is accessible at all IP addresses (IPv4 shown below):")
+		for _, iface := range ifaces {
+			addrs, err := iface.Addrs()
+			if err != nil {
+				panic(fmt.Sprintf("cannot get iface addr: %v", err))
+			}
+			for _, addr := range addrs {
+				var ip net.IP
+				switch v := addr.(type) {
+				case *net.IPNet:
+					ip = v.IP
+				case *net.IPAddr:
+					ip = v.IP
+				}
+
+				ipv4 := ip.To4()
+				if ipv4 != nil {
+					logrus.Infof("  - http://%s:%d", ipv4, s.port)
+				}
+			}
+
+		}
+	} else {
+		logrus.Info("Plot is accessible at: %s", url)
+	}
+
+	openBrowser(url)
+
+	server := http.Server{Addr: addr, Handler: s.mux}
+	return server.Serve(listener)
 }

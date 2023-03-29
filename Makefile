@@ -13,8 +13,8 @@ frontend-dev:
 
 prod:
 	cd frontend && yarn build
+	rm -rf webui
 	cp -ar frontend/dist webui
 	mkdir -p build
-	# TODO: add version string here
 	# TODO: Make different architecture variants as well
 	go build -tags prod -o build/wesplot -ldflags "-X github.com/cactusdynamics/wesplot.Version=$(VERSION)" ./cmd

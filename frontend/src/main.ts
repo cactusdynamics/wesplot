@@ -3,8 +3,15 @@ import "./styles/app.css";
 import { DataRow, Metadata } from "./types";
 import { WesplotChart } from "./wesplot-chart";
 
+let baseHost = location.host;
+if (import.meta.env.DEV) {
+  // This does mean in development, we can only run one of these at a time,
+  // which I think is fine.
+  baseHost = `${location.hostname}:5274`;
+}
+
 async function main() {
-  const response = await fetch(`http://${location.hostname}:8080/metadata`);
+  const response = await fetch(`${location.protocol}//${baseHost}/metadata`);
   const metadata: Metadata = await response.json();
   const main_panel = document.getElementById("panel")!;
 
@@ -37,7 +44,7 @@ async function main() {
 
   pause_button.addEventListener("click", handlePause);
 
-  const hostname = `ws://${location.hostname}:8080/ws`;
+  const hostname = `ws://${baseHost}/ws`;
   console.log(`connecting to ${hostname}`);
   const socket = new WebSocket(hostname);
 
@@ -48,7 +55,7 @@ async function main() {
   socket.addEventListener("close", async (event) => {
     console.log("Socket Closed Connection: ", event);
     try {
-      const response = await fetch(`http://${location.hostname}:8080/errors`);
+      const response = await fetch(`${location.protocol}//${baseHost}/errors`);
       const error: unknown = await response.json();
       console.log(error);
     } catch (e) {
