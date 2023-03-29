@@ -148,6 +148,8 @@ export class WesplotChart {
           y: {
             title: { text: metadata.ChartOptions.YLabel },
             ticks: { callback: this.addUnits.bind(this) },
+            min: metadata.ChartOptions.YMin,
+            max: metadata.ChartOptions.YMax,
           },
         },
       },
