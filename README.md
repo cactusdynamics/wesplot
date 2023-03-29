@@ -202,3 +202,4 @@ Development setup
 - Run `make backend-dev` which will start a development build of wesplot and it will plot a single signal (CPU usage from `sar`).
 - In a separate terminal, Run `make frontend-dev` which will start the front end development server.
 - Go to http://localhost:5273 to see the frontend.
+  - Note that while you can run multiple wesplots on different ports with the binary, the development setup will only work with a single server as all front-end will listen to the server at the default port (5274).

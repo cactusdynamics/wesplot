@@ -12,11 +12,13 @@ import (
 )
 
 var options struct {
-	Verbose bool `short:"v" long:"verbose" description:"Show debug logs"`
+	Host    string `short:"h" long:"host" default:"0.0.0.0" description:"the IP to start the server on. default to 0.0.0.0 (all interfaces)"`
+	Port    uint16 `short:"p" long:"port" default:"5274"`
+	Verbose bool   `short:"v" long:"verbose" description:"Show debug logs"`
 
 	Title  string   `short:"t" long:"title" default:"Plot" description:"Title of the plot. Defaults to 'Plot'"`
-	YMin   *float64 `short:"M" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
-	YMax   *float64 `short:"m" long:"ymax" description:"The max value for y (default: auto scaling)"`
+	YMin   *float64 `short:"m" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
+	YMax   *float64 `short:"M" long:"ymax" description:"The max value for y (default: auto scaling)"`
 	YUnit  string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
 	XLabel string   `long:"xlabel" description:"Label for the X axis"`
 	YLabel string   `long:"ylabel" description:"Label for the X axis"`
@@ -116,7 +118,7 @@ func main() {
 	}
 
 	dataBroadcaster := wesplot.NewDataBroadcaster(dataRowReader, options.WindowSize)
-	server := wesplot.NewHttpServer(dataBroadcaster, "0.0.0.0:8080", metadata)
+	server := wesplot.NewHttpServer(dataBroadcaster, options.Host, options.Port, metadata)
 
 	dataBroadcaster.Start(context.Background())
 	server.Run()
