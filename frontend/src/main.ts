@@ -111,7 +111,7 @@ async function main() {
   socket.addEventListener("message", (event) => {
     const rows: DataRow[] = JSON.parse(event.data);
     if (paused) {
-      row_buffer.concat(rows);
+      row_buffer = row_buffer.concat(rows);
     } else {
       chart.update(rows);
     }
