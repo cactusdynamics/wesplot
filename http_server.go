@@ -209,6 +209,7 @@ func (s *HttpServer) Run() error {
 	}
 
 	// These log lines don't need to be tagged (as that introduces more confusion)
+	url := fmt.Sprintf("http://%s:%d", s.host, s.port)
 	if s.host == "0.0.0.0" {
 		ifaces, err := net.Interfaces()
 		if err != nil {
@@ -238,8 +239,10 @@ func (s *HttpServer) Run() error {
 
 		}
 	} else {
-		logrus.Info("Plot is accessible at: http://%s:%d")
+		logrus.Info("Plot is accessible at: %s", url)
 	}
+
+	openBrowser(url)
 
 	server := http.Server{Addr: addr, Handler: s.mux}
 	return server.Serve(listener)
