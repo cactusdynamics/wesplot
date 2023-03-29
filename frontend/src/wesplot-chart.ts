@@ -8,6 +8,9 @@ import type { ZoomPluginOptions } from "chartjs-plugin-zoom/types/options";
 
 Chart.defaults.font.size = 16;
 Chart.register(zoomPlugin);
+Chart.defaults.elements.point.borderWidth = 0;
+Chart.defaults.elements.point.radius = 1;
+// Chart.defaults.elements.point.
 
 const default_config: ChartConfiguration<"scatter"> = {
   type: "scatter",
