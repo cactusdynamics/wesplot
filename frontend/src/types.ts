@@ -26,3 +26,8 @@ export interface ChartButtons {
   screenshot: HTMLButtonElement;
   settings: HTMLButtonElement;
 }
+
+export type StreamEndedMessage = {
+  StreamEnded: boolean;
+  StreamError: string;
+};
