@@ -22,15 +22,16 @@ var options struct {
 	YMax   *float64 `short:"M" long:"ymax" description:"The max value for y (default: auto scaling)"`
 	YUnit  string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
 	XLabel string   `long:"xlabel" description:"Label for the X axis"`
-	YLabel string   `long:"ylabel" description:"Label for the X axis"`
+	YLabel string   `long:"ylabel" description:"Label for the Y axis"`
 
-	XIndex int `short:"x" long:"xindex" default:"-1" description:"the index for the x column. if not specified, the x value is generated as the receive timestamp. If specified, this is will let the front end know the x value is not a timestamp. Mutually exclusive with --tindex."`
-	TIndex int `long:"tindex" default:"-1" description:"the index for the timestamp column. if not specified, the x value is generated as the receive timestamp. Mutually exclusive with --xindex."`
+	XIndex        int  `short:"x" long:"xindex" default:"-1" description:"the index for the x column. if not specified, the x value is generated as the receive timestamp. If specified, this is will let the front end know the x value is not a timestamp. Mutually exclusive with --tindex."`
+	TIndex        int  `long:"tindex" default:"-1" description:"the index for the timestamp column. if not specified, the x value is generated as the receive timestamp. Mutually exclusive with --xindex."`
+	RelativeStart bool `short:"s" long:"relative-start" description:"If this is specified, the X values will be normalized by the first value. i.e x_i = x_original_i - x_0. Applies to both timestamps and non timestamps."`
 
 	NumColumns int      `short:"n" long:"num-columns" description:"The number of columns expected for the input data. If specified, input data rows with different number of columns will be ignored."`
 	Columns    []string `short:"c" long:"columns" description:"The columns labels for the input data. This option supercedes num-columns and will also be used to validate the input data like --num-columns."`
 
-	WindowSize int `short:"w" long:"window-size" default:"1000" description:"the number of data rows cached on a rolling windows basis. default: 1000 which means 1000 data points will be cached by the tool and sent any time the browser connects"`
+	WindowSize int `short:"w" long:"window-size" default:"1800" description:"the number of data rows cached on a rolling windows basis. default: 1800 which means 1800 data points will be cached by the tool and sent any time the browser connects"`
 
 	xIsTimestamp bool
 }
@@ -65,7 +66,8 @@ func parseOptions() {
 
 	if options.YMin != nil && options.YMax != nil {
 		if *options.YMin >= *options.YMax {
-			panic("YMax must be greater than YMin")
+			logrus.Errorf("YMax (%f) must be greater than YMin (%f)", *options.YMax, *options.YMin)
+			os.Exit(1)
 		}
 	}
 
@@ -103,10 +105,11 @@ func main() {
 	logrus.Infof("starting wesplot %v", wesplot.Version)
 
 	metadata := wesplot.Metadata{
-		WindowSize:   options.WindowSize,
-		Columns:      options.Columns, // TODO: dynamic columns
-		XIsTimestamp: options.xIsTimestamp,
-		YUnit:        options.YUnit,
+		WindowSize:    options.WindowSize,
+		Columns:       options.Columns, // TODO: dynamic columns
+		XIsTimestamp:  options.xIsTimestamp,
+		RelativeStart: options.RelativeStart,
+		YUnit:         options.YUnit,
 		ChartOptions: wesplot.ChartOptions{
 			Title:  options.Title,
 			XLabel: options.XLabel,

@@ -57,6 +57,7 @@ export class WesplotChart {
   private _chart: Chart;
   private _buttons: ChartButtons;
   private _title: Element;
+  private _x0: number = NaN;
   private _zoom_active: boolean;
   private _pan_active: boolean;
   private _zoom_plugin_options: ZoomPluginOptions = {
@@ -132,7 +133,7 @@ export class WesplotChart {
     this._metadata = metadata;
     this._config = cloneDeep(default_config); // Deep copy
 
-    if (!this._metadata.XIsTimestamp) {
+    if (!this._metadata.XIsTimestamp || this._metadata.RelativeStart) {
       this._config.options!.scales!.x!.type = "linear";
     }
 
@@ -186,8 +187,18 @@ export class WesplotChart {
       const data = this._chart.data.datasets[i].data;
       for (const row of rows) {
         let x = row.X;
-        if (this._metadata.XIsTimestamp) {
-          x *= 1000; // Server side seconds time in seconds. This is pretty inefficient tho.
+
+        if (this._metadata.RelativeStart) {
+          // Inefficient code, yay.
+          // We want to display seconds if relative start is true, so we don't multiply
+          if (isNaN(this._x0)) {
+            this._x0 = x;
+          }
+
+          x -= this._x0;
+        } else if (this._metadata.XIsTimestamp) {
+          // Server side seconds time in seconds.
+          x *= 1000;
         }
 
         data.push([x, row.Ys[i]]);
@@ -196,6 +207,7 @@ export class WesplotChart {
         }
       }
     }
+
     // "none" means do not animate, this looks weird with an updating chart
     this._chart.update("none");
   }
