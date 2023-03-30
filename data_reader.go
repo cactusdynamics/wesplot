@@ -131,9 +131,11 @@ func (r *RelaxedStringReader) Read(ctx context.Context) ([]string, error) {
 	return splittedLine, nil
 }
 
-// Generates the current unix timestamp in milliseconds.
+// Generates the current unix timestamp in seconds.
 func NowXGenerator(line []float64) float64 {
-	return float64(time.Now().UnixMilli())
+	// Use Micro because we want to preserve the timestamp to at least millisecond
+	// accuracy. using time.Now().Unix() will truncate.
+	return float64(time.Now().UnixMicro()) / 1000000.0
 }
 
 // Creates a DataRowReader based on text input. Unrecognized/unparsable lines
@@ -143,7 +145,7 @@ type TextToDataRowReader struct {
 	Input StringReader
 
 	// The x column index. If this is <0, X is generated via XGenerator, which
-	// corresponds to the current time stamp in milliseconds. Note this column
+	// corresponds to the current time stamp in seconds. Note this column
 	// will be put into DataRow.X while the rest of the row except this column
 	// will be put into DataRow.Ys.
 	XIndex int

@@ -15,6 +15,7 @@ var options struct {
 	Host    string `short:"h" long:"host" default:"0.0.0.0" description:"the IP to start the server on. default to 0.0.0.0 (all interfaces)"`
 	Port    uint16 `short:"p" long:"port" default:"5274"`
 	Verbose bool   `short:"v" long:"verbose" description:"Show debug logs"`
+	Tee     bool   `short:"T" long:"--tee" description:"write the data (and generated timestamp if applicable) in a CSV into stdout in addition to visualizing with the plot"`
 
 	Title  string   `short:"t" long:"title" default:"Plot" description:"Title of the plot. Defaults to 'Plot'"`
 	YMin   *float64 `short:"m" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
@@ -123,7 +124,7 @@ func main() {
 		ExpectExactColumnCount: true, // Not sure how to deal with dynamic columns so for now we need exact column count
 	}
 
-	dataBroadcaster := wesplot.NewDataBroadcaster(dataRowReader, options.WindowSize)
+	dataBroadcaster := wesplot.NewDataBroadcaster(dataRowReader, options.WindowSize, options.Tee)
 	server := wesplot.NewHttpServer(dataBroadcaster, options.Host, options.Port, metadata)
 
 	dataBroadcaster.Start(context.Background())
