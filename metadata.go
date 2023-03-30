@@ -9,9 +9,10 @@ type ChartOptions struct {
 }
 
 type Metadata struct {
-	WindowSize   int
-	Columns      []string
-	XIsTimestamp bool
-	YUnit        string
-	ChartOptions ChartOptions
+	WindowSize    int
+	Columns       []string
+	XIsTimestamp  bool
+	RelativeStart bool
+	YUnit         string
+	ChartOptions  ChartOptions
 }

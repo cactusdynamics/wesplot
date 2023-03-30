@@ -15,6 +15,7 @@ export interface Metadata {
   WindowSize: number;
   Columns: string[];
   XIsTimestamp: boolean;
+  RelativeStart: boolean;
   YUnit: string;
   ChartOptions: ChartOptions;
 }
