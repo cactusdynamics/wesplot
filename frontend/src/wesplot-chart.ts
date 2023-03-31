@@ -120,6 +120,7 @@ export class WesplotChart {
 
     if (metadata.ChartOptions.Title) {
       this.setTitle(metadata.ChartOptions.Title);
+      document.title = metadata.ChartOptions.Title;
     }
 
     // Zoom and pan are not enabled by default
@@ -228,6 +229,12 @@ export class WesplotChart {
   }
 
   private screenshot(_event: unknown) {
+    // Get the old title
+    const cached_title = this._config!.options!.plugins!.title!.text;
+    this._config!.options!.plugins!.title!.text =
+      this._metadata.ChartOptions.Title;
+    this._chart.update("none");
+
     // Set canvas background color to white for the screenshot
     const context = this._canvas.getContext("2d")!;
     context.save();
@@ -244,6 +251,8 @@ export class WesplotChart {
     // Trigger the download
     a.click();
 
+    // Restore the old title
+    this._config!.options!.plugins!.title!.text = cached_title;
     this._chart.update("none"); // Update the chart to reset the background color
   }
 

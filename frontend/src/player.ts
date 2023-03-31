@@ -97,7 +97,7 @@ export class Player {
         } else {
           this._chart.update(rows);
           this._set_status_text(
-            `Live: last row received ${time_since_last_data} seconds ago`
+            `Live: last row received ${time_since_last_data} second(s) ago`
           );
         }
       }
