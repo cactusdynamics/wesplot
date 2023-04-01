@@ -4,6 +4,7 @@
 
 @import "./bar.css";
 @import "./panel.css";
+@import "./settings.css";
 
 html {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
