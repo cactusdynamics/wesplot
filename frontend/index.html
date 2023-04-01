@@ -60,6 +60,53 @@
       </div>
     </div>
 
+    <div class="overlay">
+      <div id="settings" class="content">
+        <h1>Settings</h1>
+        <form>
+          <div class="form-grid">
+            <label for="settings-title">Title</label>
+            <input type="text" name="settings-title" id="settings-title" />
+
+            <label for="settings-series-names">Series names</label>
+            <input type="text" name="settings-series-names" id="settings-series-names" />
+
+            <label for="settings-xmin">X Min</label>
+            <input type="number" name="settings-xmin" id="settings-xmin" placeholder="Auto" />
+
+            <label for="settings-xmax">X Max</label>
+            <input type="number" name="settings-xmax" id="settings-xmax" placeholder="Auto" />
+
+            <label for="settings-xlabel">X Label</label>
+            <input type="number" name="settings-xlabel" id="settings-xlabel" placeholder="No label" />
+
+            <label for="settings-ymin">Y Min</label>
+            <input type="number" name="settings-ymin" id="settings-ymin" placeholder="Auto" />
+
+            <label for="settings-ymax">Y Max</label>
+            <input type="number" name="settings-ymax" id="settings-ymax" placeholder="Auto" />
+
+            <label for="settings-ylabel">Y Label</label>
+            <input type="number" name="settings-ylabel" id="settings-ylabel" placeholder="No label" />
+
+            <label for="settings-ymax">Y Unit</label>
+            <input type="text" name="settings-yunit" id="settings-yunit" placeholder="No units" />
+
+            <label for="settings-relative-start">
+              <abbr title="Set the first X value to be zero and all subsequent values to be relative to the first one">Relative start</abbr>
+            </label>
+            <input type="checkbox" name="settings-relative-start" id="settings-relative-start" />
+          </div>
+
+          <div class="button-bar">
+            <button type="reset">Cancel</button>
+            <button type="submit" class="success">Save</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -41,3 +41,11 @@ div.button-bar button:hover {
 div.button-bar button:active {
   padding-top: 3px;
 }
+
+div.button-bar button.success {
+  background-color: rgb(115, 183, 14);
+}
+
+div.button-bar button.success:hover {
+  background-color: rgb(104, 165, 12);
+}
