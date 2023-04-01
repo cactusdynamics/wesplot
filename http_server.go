@@ -132,6 +132,17 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 
+			case <-time.After(bufferTimeCapacity):
+				if len(dataBuffer) > 0 {
+					logger.WithField("buflen", len(dataBuffer)).Debug("timed out waiting for more data, flushing")
+					err := flushBufferToWebsocket()
+					if err != nil {
+						// At this point the websocket closed, so we don't even need to send anything
+						logger.Warn("websocket write failed and closed")
+						return
+					}
+				}
+
 			case <-ctx.Done(): // client connection closes causes the req.Context to be canceled?
 				logger.Info("client closed connection or context canceled")
 				c.Close(websocket.StatusNormalClosure, "")
