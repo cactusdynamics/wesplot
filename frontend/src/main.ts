@@ -1,7 +1,7 @@
 import { Player } from "./player";
 import "./styles/app.css";
 
-import { DataRow, Metadata, StreamEndedMessage } from "./types";
+import { Metadata } from "./types";
 import { WesplotChart } from "./wesplot-chart";
 
 let baseHost = location.host;
@@ -20,7 +20,7 @@ async function main() {
     response = await fetch(`${location.protocol}//${baseHost}/metadata`);
     metadata = await response.json();
   } catch (e) {
-    player.error(`Backend unreachable: ${e}`);
+    player.handleError(`Backend unreachable: ${e}`);
     return;
   }
   const main_panel = document.getElementById("panel")!;
