@@ -14,20 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-go@v4
-        with:
-          go-version-file: "go.mod"
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      # https://github.com/actions/setup-node/issues/182
-      - run: "npm install -g yarn"
-
-      - run: "cd frontend && yarn"
-
-      - run: make prod-all
+      - run: .github/build.sh
 
       - uses: actions/upload-artifact@v3
         with:
