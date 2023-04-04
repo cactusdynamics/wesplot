@@ -25,9 +25,10 @@ prod: frontend-dev
 prod-all: frontend-prod
 	rm -rf build
 	mkdir -p build
-	export GOOS=darwin GOARCH=amd64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH ./cmd
-	export GOOS=darwin GOARCH=arm64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH ./cmd
-	export GOOS=linux GOARCH=amd64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH ./cmd
-	export GOOS=linux GOARCH=arm64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH ./cmd
-	export GOOS=windows GOARCH=amd64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH ./cmd
+	export GOOS=darwin GOARCH=amd64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
+	export GOOS=darwin GOARCH=arm64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
+	export GOOS=linux GOARCH=amd64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
+	export GOOS=linux GOARCH=arm64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
+	export GOOS=windows GOARCH=amd64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
 	cd build && sha256sum * | tee sha256sums
+	ls -lh build
