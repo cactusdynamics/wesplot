@@ -22,7 +22,7 @@ prod: frontend-dev
 	mkdir -p build
 	go build $(BUILD_FLAGS) -o build/wesplot ./cmd
 
-prod-all: frontend-prod
+prod-all:
 	rm -rf build
 	mkdir -p build
 	export GOOS=darwin GOARCH=amd64 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
