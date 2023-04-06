@@ -6,10 +6,9 @@ div.overlay {
   width: 100%;
   height: 100%;
   background-color: rgba(127, 127, 127, 0.5);
-  display: flex;
+  display: none;
   justify-content: center;
   align-items: center;
-  display: none;
 }
 
 div.overlay div.content {
@@ -50,7 +49,7 @@ div.content h1 {
   text-align: center;
   font-size: 1.5rem;
   margin-top: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 div#settings .form-grid {
@@ -97,4 +96,18 @@ div#settings .button-bar button {
   width: fit-content;
   height: 1.75rem;
   flex: 1 1 auto;
+}
+
+div#settings .status-bar {
+  background-color: rgb(221, 139, 139);
+  border: 1px  rgb(173, 84, 84) solid;
+  margin-bottom: 1rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  display: none;
+}
+
+div#settings .status-bar p{
+  margin: 0;
+  text-align: center;
 }

@@ -97,13 +97,13 @@ export class Player {
       this._last_data_received_time = Date.now();
 
       const rows: DataRow[] = JSON.parse(event.data);
-      console.log(rows);
       // If paused, append new data to the buffer, but do not push this to the chart
       // If not paused, no need to push to the buffer, update the chart directly
       if (this._paused) {
         this._data_buffer = this._data_buffer.concat(rows);
       } else {
         if (this._chart === undefined) {
+          // TODO: There's a potential race here - this connection logic should happen after registerChart
           throw Error("Player has no registered chart");
         }
 

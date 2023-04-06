@@ -106,16 +106,16 @@ func main() {
 
 	metadata := wesplot.Metadata{
 		WindowSize:    options.WindowSize,
-		Columns:       options.Columns, // TODO: dynamic columns
 		XIsTimestamp:  options.xIsTimestamp,
 		RelativeStart: options.RelativeStart,
-		YUnit:         options.YUnit,
-		ChartOptions: wesplot.ChartOptions{
-			Title:  options.Title,
-			XLabel: options.XLabel,
-			YLabel: options.YLabel,
-			YMin:   options.YMin,
-			YMax:   options.YMax,
+		WesplotOptions: wesplot.WesplotOptions{
+			Title:   options.Title,
+			Columns: options.Columns, // TODO: dynamic columns
+			XLabel:  options.XLabel,
+			YLabel:  options.YLabel,
+			YMin:    options.YMin,
+			YMax:    options.YMax,
+			YUnit:   options.YUnit,
 		},
 	}
 
