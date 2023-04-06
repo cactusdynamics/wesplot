@@ -3,21 +3,23 @@ export type DataRow = {
   Ys: number[];
 };
 
-interface ChartOptions {
+export interface WesplotOptions {
   Title: string;
-  XLabel?: string;
-  YLabel?: string;
+  Columns: string[];
+  XLabel: string;
+  YLabel: string;
   YMin?: number;
   YMax?: number;
+  XMin?: number;
+  XMax?: number;
+  YUnit: string;
 }
 
 export interface Metadata {
   WindowSize: number;
-  Columns: string[];
   XIsTimestamp: boolean;
   RelativeStart: boolean;
-  YUnit: string;
-  ChartOptions: ChartOptions;
+  WesplotOptions: WesplotOptions;
 }
 
 export interface ChartButtons {
@@ -26,6 +28,21 @@ export interface ChartButtons {
   pan: HTMLButtonElement;
   screenshot: HTMLButtonElement;
   settings: HTMLButtonElement;
+}
+
+export interface SettingsPanelInputs {
+  cancel: HTMLButtonElement;
+  save: HTMLButtonElement;
+  title: HTMLInputElement;
+  series_names: HTMLInputElement;
+  x_min: HTMLInputElement;
+  x_max: HTMLInputElement;
+  x_label: HTMLInputElement;
+  y_min: HTMLInputElement;
+  y_max: HTMLInputElement;
+  y_label: HTMLInputElement;
+  y_unit: HTMLInputElement;
+  relative_start: HTMLInputElement;
 }
 
 export type StreamEndedMessage = {

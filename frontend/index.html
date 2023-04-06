@@ -60,9 +60,10 @@
       </div>
     </div>
 
-    <div class="overlay">
+    <div class="overlay" id="settings-panel">
       <div id="settings" class="content">
         <h1>Settings</h1>
+        <div class="status-bar"><p id="settings-status-text">Hello</p></div>
         <form>
           <div class="form-grid">
             <label for="settings-title">Title</label>
@@ -78,7 +79,7 @@
             <input type="number" name="settings-xmax" id="settings-xmax" placeholder="Auto" />
 
             <label for="settings-xlabel">X Label</label>
-            <input type="number" name="settings-xlabel" id="settings-xlabel" placeholder="No label" />
+            <input type="text" name="settings-xlabel" id="settings-xlabel" placeholder="No label" />
 
             <label for="settings-ymin">Y Min</label>
             <input type="number" name="settings-ymin" id="settings-ymin" placeholder="Auto" />
@@ -87,7 +88,7 @@
             <input type="number" name="settings-ymax" id="settings-ymax" placeholder="Auto" />
 
             <label for="settings-ylabel">Y Label</label>
-            <input type="number" name="settings-ylabel" id="settings-ylabel" placeholder="No label" />
+            <input type="text" name="settings-ylabel" id="settings-ylabel" placeholder="No label" />
 
             <label for="settings-ymax">Y Unit</label>
             <input type="text" name="settings-yunit" id="settings-yunit" placeholder="No units" />
@@ -99,8 +100,8 @@
           </div>
 
           <div class="button-bar">
-            <button type="reset">Cancel</button>
-            <button type="submit" class="success">Save</button>
+            <button type="reset" id="settings-cancel-button">Cancel</button>
+            <button type="submit" class="success" id="settings-save-button">Save</button>
           </div>
 
         </form>

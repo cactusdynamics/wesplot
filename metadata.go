@@ -1,18 +1,18 @@
 package wesplot
 
-type ChartOptions struct {
-	Title  string
-	XLabel string   `json:",omitempty"`
-	YLabel string   `json:",omitempty"`
-	YMin   *float64 `json:",omitempty"`
-	YMax   *float64 `json:",omitempty"`
+type WesplotOptions struct {
+	Title   string
+	Columns []string
+	XLabel  string
+	YLabel  string
+	YMin    *float64 `json:",omitempty"`
+	YMax    *float64 `json:",omitempty"`
+	YUnit   string
 }
 
 type Metadata struct {
-	WindowSize    int
-	Columns       []string
-	XIsTimestamp  bool
-	RelativeStart bool
-	YUnit         string
-	ChartOptions  ChartOptions
+	WindowSize     int
+	XIsTimestamp   bool
+	RelativeStart  bool
+	WesplotOptions WesplotOptions
 }
