@@ -199,8 +199,15 @@ export class WesplotChart {
     this._config = cloneDeep(default_config); // Deep copy
     this._wesplot_options = metadata.WesplotOptions;
 
+    // Set a linear timescape if we are not using timestamped data or if we have a relative start
     if (!this._metadata.XIsTimestamp || this._metadata.RelativeStart) {
       this._config.options!.scales!.x!.type = "linear";
+    } else {
+      // If we have timestamped data, X limits should be set with a Unix timestamp
+      this._settings.x_min.type = "datetime-local";
+      this._settings.x_min.step = "1";
+      this._settings.x_max.type = "datetime-local";
+      this._settings.x_max.step = "1";
     }
 
     // We need to maintain a stable reference to zoom plugin options so it can
@@ -322,7 +329,6 @@ export class WesplotChart {
     context.restore(); // This will paint the background white until the next chart update
 
     var a = document.createElement("a");
-    // a.href = this._chart.toBase64Image();
     a.href = this._canvas.toDataURL("image/png", 1.0);
     a.download = `wesplot_${this._title.textContent!}.png`;
 
@@ -335,11 +341,11 @@ export class WesplotChart {
   }
 
   private resetView() {
-    // TODO: this doesn't seem to work after changing X/Y lims via settings
-    this._wesplot_options.XMin = undefined;
-    this._wesplot_options.XMax = undefined;
-    this._wesplot_options.YMin = undefined;
-    this._wesplot_options.YMax = undefined;
+    // Must use NaN to reset limits back to auto
+    this._wesplot_options.XMin = NaN;
+    this._wesplot_options.XMax = NaN;
+    this._wesplot_options.YMin = NaN;
+    this._wesplot_options.YMax = NaN;
     this.updatePlotSettings();
     this._chart.resetZoom();
   }
@@ -389,19 +395,43 @@ export class WesplotChart {
     this._settings_panel.style.display = "flex";
     this._settings.title.value = this._wesplot_options.Title;
     this._settings.series_names.value = this._wesplot_options.Columns.join(",");
-    this._settings.x_min.valueAsNumber = this._wesplot_options.XMin
-      ? this._wesplot_options.XMin
-      : NaN;
-    this._settings.x_max.valueAsNumber = this._wesplot_options.XMax
-      ? this._wesplot_options.XMax
-      : NaN;
+
+    // Display current X limits
+    // If undefined, default X limits are NaN
+    if (this._wesplot_options.XMin === undefined) {
+      this._settings.x_min.valueAsNumber = NaN;
+
+      // If X is a timestamp, display the old X limit as a timestamp
+    } else if (this._metadata.XIsTimestamp) {
+      // Interpret the XMin (seconds) as a date and apply a shift to show the date in the correct time zone
+      this._settings.x_min.valueAsDate = new Date(
+        this._wesplot_options.XMin - new Date().getTimezoneOffset() * 60000
+      );
+
+      // If X is not a timestamp and is not undefined, show the existing XMin as default
+    } else {
+      this._settings.x_min.valueAsNumber = this._wesplot_options.XMin;
+    }
+
+    // Repeat the same logic for XMax
+    if (this._wesplot_options.XMax === undefined) {
+      this._settings.x_max.valueAsNumber = NaN;
+    } else if (this._metadata.XIsTimestamp) {
+      this._settings.x_max.valueAsDate = new Date(
+        this._wesplot_options.XMax - new Date().getTimezoneOffset() * 60000
+      );
+    } else {
+      this._settings.x_max.valueAsNumber = this._wesplot_options.XMax;
+    }
     this._settings.x_label.value = this._wesplot_options.XLabel;
-    this._settings.y_min.valueAsNumber = this._wesplot_options.YMin
-      ? this._wesplot_options.YMin
-      : NaN;
-    this._settings.y_max.valueAsNumber = this._wesplot_options.YMax
-      ? this._wesplot_options.YMax
-      : NaN;
+    this._settings.y_min.valueAsNumber =
+      this._wesplot_options.YMin !== undefined
+        ? this._wesplot_options.YMin
+        : NaN;
+    this._settings.y_max.valueAsNumber =
+      this._wesplot_options.YMax !== undefined
+        ? this._wesplot_options.YMax
+        : NaN;
     this._settings.y_label.value = this._wesplot_options.YLabel;
     this._settings.y_unit.value = this._wesplot_options.YUnit;
   }
@@ -431,10 +461,39 @@ export class WesplotChart {
       return;
     }
 
+    // Check that limits are valid:
+    // XMax must be greater than XMin unless they are both NaN
+    if (
+      (!Number.isNaN(this._settings.x_min.valueAsNumber) &&
+        !Number.isNaN(this._settings.x_max.valueAsNumber)) ||
+      this._settings.x_min.valueAsNumber >= this._settings.x_max.valueAsNumber
+    ) {
+      this.showSettingsError(`Error: X max must be greater than X min`);
+      return;
+    }
+    if (
+      (!Number.isNaN(this._settings.y_min.valueAsNumber) &&
+        !Number.isNaN(this._settings.y_max.valueAsNumber)) ||
+      this._settings.y_min.valueAsNumber >= this._settings.y_max.valueAsNumber
+    ) {
+      this.showSettingsError(`Error: Y max must be greater than Y min`);
+      return;
+    }
     this._wesplot_options.Title = this._settings.title.value;
     this._wesplot_options.Columns = new_column_names;
-    this._wesplot_options.XMin = this._settings.x_min.valueAsNumber;
-    this._wesplot_options.XMax = this._settings.x_max.valueAsNumber;
+
+    // If X is a timestamp, interpret the XMin value (number) as a date. Then, call valueOf() to get the date as a number again, but with the proper time zone
+    if (this._metadata.XIsTimestamp) {
+      this._wesplot_options.XMin = new Date(
+        this._settings.x_min.value
+      ).valueOf();
+      this._wesplot_options.XMax = new Date(
+        this._settings.x_max.value
+      ).valueOf();
+    } else {
+      this._wesplot_options.XMin = this._settings.x_min.valueAsNumber;
+      this._wesplot_options.XMax = this._settings.x_max.valueAsNumber;
+    }
     this._wesplot_options.XLabel = this._settings.x_label.value;
     this._wesplot_options.YMin = this._settings.y_min.valueAsNumber;
     this._wesplot_options.YMax = this._settings.y_max.valueAsNumber;
