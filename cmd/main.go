@@ -17,7 +17,7 @@ var options struct {
 	Verbose bool   `short:"v" long:"verbose" description:"Show debug logs"`
 	Tee     bool   `short:"T" long:"--tee" description:"write the data (and generated timestamp if applicable) in a CSV into stdout in addition to visualizing with the plot"`
 
-	Title  string   `short:"t" long:"title" default:"Plot" description:"Title of the plot. Defaults to 'Plot'"`
+	Title  string   `short:"t" long:"title" default:"Wesplot" description:"Title of the plot. Defaults to 'Plot'"`
 	YMin   *float64 `short:"m" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
 	YMax   *float64 `short:"M" long:"ymax" description:"The max value for y (default: auto scaling)"`
 	YUnit  string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
