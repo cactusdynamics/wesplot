@@ -24,28 +24,35 @@ div.button-bar {
   gap: 3px;
 }
 
-div.button-bar button {
-  height: 100%;
+div.button-bar button, div.button-bar a.button {
   border: 0;
   border-radius: 5px;
   background-color: rgb(208, 208, 208);
   height: 24px;
   width: 24px;
   text-align: center;
+  display: block;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: black;
+  text-decoration: none;
 }
 
-div.button-bar button:hover {
+div.button-bar button:hover, div.button-bar a.button:hover {
   background-color: rgb(191, 191, 191);
 }
 
-div.button-bar button:active {
+div.button-bar button:active, div.button-bar a.button:active {
   padding-top: 3px;
 }
 
-div.button-bar button.success {
+div.button-bar button.success, div.button-bar a.button.success {
   background-color: rgb(115, 183, 14);
 }
 
-div.button-bar button.success:hover {
+div.button-bar button.success:hover, div.button-bar a.button.success:hover {
   background-color: rgb(104, 165, 12);
 }

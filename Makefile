@@ -18,7 +18,7 @@ frontend-prod:
 	rm -rf webui
 	cp -ar frontend/dist webui
 
-prod: frontend-dev
+prod: frontend-prod
 	mkdir -p build
 	go build $(BUILD_FLAGS) -o build/wesplot ./cmd
 
