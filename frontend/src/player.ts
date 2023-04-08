@@ -18,14 +18,13 @@ export class Player {
 
   private _chart?: WesplotChart;
 
-  private _hostname: string;
-  private _socket: WebSocket;
+  private _socket?: WebSocket;
   private _data_buffer: DataRow[] = [];
 
   private _last_data_received_time?: number;
   private _interval_id: number;
 
-  constructor(baseHost: string) {
+  constructor() {
     // Get all HTML elements
     // ---------------------
 
@@ -50,12 +49,10 @@ export class Player {
     // Update the status text every second
     // -----------------------------------
     this._interval_id = setInterval(this.updateStatusBar.bind(this), 1000);
+  }
 
-    // Set up websocket
-    // ----------------
-
-    this._hostname = `ws://${baseHost}/ws`;
-    this._socket = new WebSocket(this._hostname);
+  connectToWebsocket(baseHost: string) {
+    this._socket = new WebSocket(`ws://${baseHost}/ws`);
 
     // Set socket handlers
     this._socket.addEventListener("open", () => {
