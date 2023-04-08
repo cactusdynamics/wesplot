@@ -1,3 +1,5 @@
+import { LimitInput } from "./limits";
+
 export type DataRow = {
   X: number;
   Ys: number[];
@@ -35,11 +37,11 @@ export interface SettingsPanelInputs {
   save: HTMLButtonElement;
   title: HTMLInputElement;
   series_names: HTMLInputElement;
-  x_min: HTMLInputElement;
-  x_max: HTMLInputElement;
+  x_min: LimitInput;
+  x_max: LimitInput;
   x_label: HTMLInputElement;
-  y_min: HTMLInputElement;
-  y_max: HTMLInputElement;
+  y_min: LimitInput;
+  y_max: LimitInput;
   y_label: HTMLInputElement;
   y_unit: HTMLInputElement;
   relative_start: HTMLInputElement;
