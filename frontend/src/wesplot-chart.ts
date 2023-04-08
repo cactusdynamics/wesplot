@@ -194,6 +194,42 @@ export class WesplotChart {
       this.openSettings.bind(this)
     );
 
+    const self = this;
+    // Event handler to close settings if clicking outside the panel
+    document
+      .getElementById("settings-panel")!
+      .addEventListener("click", function (event) {
+        if (event.target === this) {
+          // This is now the "settings-panel" element
+          // Capture self to be able to call functions from the WesplotChart object
+          self.closeSettings();
+        }
+      });
+
+    // Event handler to close settings on Esc
+    document.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.defaultPrevented) {
+          return; // Do nothing if the event was already processed
+        }
+
+        switch (event.key) {
+          case "Esc": // IE/Edge specific value
+          case "Escape":
+            // Do something for "esc" key press.
+            this.closeSettings();
+            break;
+          default:
+            return; // Quit when this doesn't handle the key event.
+        }
+
+        // Cancel the default action to avoid it being handled twice
+        event.preventDefault();
+      },
+      true
+    );
+
     if (metadata.WesplotOptions.Title) {
       this.setTitle(metadata.WesplotOptions.Title);
     }
