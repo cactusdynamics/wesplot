@@ -11,6 +11,7 @@ import {
 import { cloneDeep, merge } from "lodash";
 import classes from "./styles/dynamic-styles.module.css";
 import type { ZoomPluginOptions } from "chartjs-plugin-zoom/types/options";
+import { LimitInput } from "./limits";
 
 Chart.defaults.font.size = 16;
 Chart.register(zoomPlugin);
@@ -125,11 +126,21 @@ export class WesplotChart {
       series_names: document.getElementById(
         "settings-series-names"
       )! as HTMLInputElement,
-      x_min: document.getElementById("settings-xmin")! as HTMLInputElement,
-      x_max: document.getElementById("settings-xmax")! as HTMLInputElement,
+      x_min: new LimitInput(
+        document.getElementById("settings-xmin")! as HTMLInputElement,
+        metadata.XIsTimestamp
+      ),
+      x_max: new LimitInput(
+        document.getElementById("settings-xmax")! as HTMLInputElement,
+        metadata.XIsTimestamp
+      ),
       x_label: document.getElementById("settings-xlabel")! as HTMLInputElement,
-      y_min: document.getElementById("settings-ymin")! as HTMLInputElement,
-      y_max: document.getElementById("settings-ymax")! as HTMLInputElement,
+      y_min: new LimitInput(
+        document.getElementById("settings-ymin")! as HTMLInputElement
+      ),
+      y_max: new LimitInput(
+        document.getElementById("settings-ymax")! as HTMLInputElement
+      ),
       y_label: document.getElementById("settings-ylabel")! as HTMLInputElement,
       y_unit: document.getElementById("settings-yunit")! as HTMLInputElement,
       relative_start: document.getElementById(
@@ -199,6 +210,7 @@ export class WesplotChart {
     this._config = cloneDeep(default_config); // Deep copy
     this._wesplot_options = metadata.WesplotOptions;
 
+    // Set a linear timescape if we are not using timestamped data or if we have a relative start
     if (!this._metadata.XIsTimestamp || this._metadata.RelativeStart) {
       this._config.options!.scales!.x!.type = "linear";
     }
@@ -322,7 +334,6 @@ export class WesplotChart {
     context.restore(); // This will paint the background white until the next chart update
 
     var a = document.createElement("a");
-    // a.href = this._chart.toBase64Image();
     a.href = this._canvas.toDataURL("image/png", 1.0);
     a.download = `wesplot_${this._title.textContent!}.png`;
 
@@ -335,11 +346,11 @@ export class WesplotChart {
   }
 
   private resetView() {
-    // TODO: this doesn't seem to work after changing X/Y lims via settings
-    this._wesplot_options.XMin = undefined;
-    this._wesplot_options.XMax = undefined;
-    this._wesplot_options.YMin = undefined;
-    this._wesplot_options.YMax = undefined;
+    // Must use NaN to reset limits back to auto
+    this._wesplot_options.XMin = NaN;
+    this._wesplot_options.XMax = NaN;
+    this._wesplot_options.YMin = NaN;
+    this._wesplot_options.YMax = NaN;
     this.updatePlotSettings();
     this._chart.resetZoom();
   }
@@ -386,22 +397,20 @@ export class WesplotChart {
   }
 
   private openSettings() {
+    this.hideSettingsError();
     this._settings_panel.style.display = "flex";
     this._settings.title.value = this._wesplot_options.Title;
     this._settings.series_names.value = this._wesplot_options.Columns.join(",");
-    this._settings.x_min.valueAsNumber = this._wesplot_options.XMin
-      ? this._wesplot_options.XMin
-      : NaN;
-    this._settings.x_max.valueAsNumber = this._wesplot_options.XMax
-      ? this._wesplot_options.XMax
-      : NaN;
+
+    // Display current X limits
+    this._settings.x_min.set_value(this._wesplot_options.XMin);
+    this._settings.x_max.set_value(this._wesplot_options.XMax);
     this._settings.x_label.value = this._wesplot_options.XLabel;
-    this._settings.y_min.valueAsNumber = this._wesplot_options.YMin
-      ? this._wesplot_options.YMin
-      : NaN;
-    this._settings.y_max.valueAsNumber = this._wesplot_options.YMax
-      ? this._wesplot_options.YMax
-      : NaN;
+
+    // Display current Y limits
+    this._settings.y_min.set_value(this._wesplot_options.YMin);
+    this._settings.y_max.set_value(this._wesplot_options.YMax);
+
     this._settings.y_label.value = this._wesplot_options.YLabel;
     this._settings.y_unit.value = this._wesplot_options.YUnit;
   }
@@ -431,17 +440,36 @@ export class WesplotChart {
       return;
     }
 
+    // Check that limits are valid:
+    // XMax must be greater than XMin unless either are NaN
+    if (
+      !Number.isNaN(this._settings.x_min.get_value()) &&
+      !Number.isNaN(this._settings.x_max.get_value()) &&
+      this._settings.x_min.get_value() >= this._settings.x_max.get_value()
+    ) {
+      this.showSettingsError(`Error: X max must be greater than X min`);
+      return;
+    }
+    if (
+      !Number.isNaN(this._settings.y_min.get_value()) &&
+      !Number.isNaN(this._settings.y_max.get_value()) &&
+      this._settings.y_min.get_value() >= this._settings.y_max.get_value()
+    ) {
+      this.showSettingsError(`Error: Y max must be greater than Y min`);
+      return;
+    }
     this._wesplot_options.Title = this._settings.title.value;
     this._wesplot_options.Columns = new_column_names;
-    this._wesplot_options.XMin = this._settings.x_min.valueAsNumber;
-    this._wesplot_options.XMax = this._settings.x_max.valueAsNumber;
+
+    this._wesplot_options.XMin = this._settings.x_min.get_value();
+    this._wesplot_options.XMax = this._settings.x_max.get_value();
+
     this._wesplot_options.XLabel = this._settings.x_label.value;
-    this._wesplot_options.YMin = this._settings.y_min.valueAsNumber;
-    this._wesplot_options.YMax = this._settings.y_max.valueAsNumber;
+    this._wesplot_options.YMin = this._settings.y_min.get_value();
+    this._wesplot_options.YMax = this._settings.y_max.get_value();
     this._wesplot_options.YLabel = this._settings.y_label.value;
     this._wesplot_options.YUnit = this._settings.y_unit.value;
 
-    this.hideSettingsError();
     this.updatePlotSettings();
     this.closeSettings();
   }
