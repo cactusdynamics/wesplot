@@ -12,7 +12,7 @@ if (import.meta.env.DEV) {
 }
 
 async function main() {
-  const player = new Player(baseHost);
+  const player = new Player();
   let response: Response;
   let metadata: Metadata;
 
@@ -28,6 +28,7 @@ async function main() {
   const chart = new WesplotChart(main_panel, metadata);
 
   player.registerChart(chart);
+  player.connectToWebsocket(baseHost);
 }
 
 window.addEventListener("load", main);
