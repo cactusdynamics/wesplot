@@ -8,7 +8,7 @@ import {
   SettingsPanelInputs,
   WesplotOptions,
 } from "./types";
-import { cloneDeep, merge } from "lodash";
+import { cloneDeep, merge } from "lodash-es";
 import classes from "./styles/dynamic-styles.module.css";
 import type { ZoomPluginOptions } from "chartjs-plugin-zoom/types/options";
 import { LimitInput } from "./limits";
