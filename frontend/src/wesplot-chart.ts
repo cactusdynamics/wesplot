@@ -367,18 +367,23 @@ export class WesplotChart {
   }
 
   private addUnits(value: number | string, _index: unknown, _ticks: unknown) {
+    let displayValue: string;
+    let displayUnit: string = "";
+
     if (typeof value === "number") {
-      if (!this._wesplot_options.YUnit) {
-        // Don't append space if no unit is provided
-        return value.toPrecision(5).replace(/(?:\.0+|(\.\d+?)0+)$/, "$1");
-      }
-      return `${value.toPrecision(5).replace(/(?:\.0+|(\.\d+?)0+)$/, "$1")} ${
-        this._wesplot_options.YUnit
-      }`;
+      displayValue = value.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 3,
+      });
+    } else {
+      displayValue = value;
     }
 
-    return `${value.replace(/(?:\.0+|(\.\d+?)0+)$/, "$1")} ${!this
-      ._wesplot_options.YUnit}`;
+    if (this._wesplot_options.YUnit.length > 0) {
+      displayUnit = ` ${this._wesplot_options.YUnit}`;
+    }
+
+    return `${displayValue}${displayUnit}`;
   }
 
   private screenshot() {
@@ -529,6 +534,7 @@ export class WesplotChart {
     this._wesplot_options.XLabel = this._settings.x_label.value;
     this._wesplot_options.YMin = this._settings.y_min.get_value();
     this._wesplot_options.YMax = this._settings.y_max.get_value();
+
     this._wesplot_options.YLabel = this._settings.y_label.value;
     this._wesplot_options.YUnit = this._settings.y_unit.value;
 
