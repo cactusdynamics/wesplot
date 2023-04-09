@@ -103,6 +103,8 @@ export class WesplotChart {
   };
 
   constructor(panel: HTMLElement, metadata: Metadata) {
+    this._metadata = metadata;
+
     // ==========================
     // Get relevant HTML elements
     // ==========================
@@ -132,11 +134,11 @@ export class WesplotChart {
       )! as HTMLInputElement,
       x_min: new LimitInput(
         document.getElementById("settings-xmin")! as HTMLInputElement,
-        metadata.XIsTimestamp
+        this.xIsTime()
       ),
       x_max: new LimitInput(
         document.getElementById("settings-xmax")! as HTMLInputElement,
-        metadata.XIsTimestamp
+        this.xIsTime()
       ),
       x_label: document.getElementById("settings-xlabel")! as HTMLInputElement,
       y_min: new LimitInput(
@@ -246,12 +248,11 @@ export class WesplotChart {
     // Set chart configuration
     // =======================
 
-    this._metadata = metadata;
     this._config = cloneDeep(default_config); // Deep copy
     this._wesplot_options = metadata.WesplotOptions;
 
     // Set a linear timescape if we are not using timestamped data or if we have a relative start
-    if (!this._metadata.XIsTimestamp || this._metadata.RelativeStart) {
+    if (!this.xIsTime()) {
       this._config.options!.scales!.x!.type = "linear";
     }
 
@@ -282,18 +283,39 @@ export class WesplotChart {
     this.setZoomPan("pan", false);
   }
 
+  xIsTime() {
+    return this._metadata.XIsTimestamp && !this._metadata.RelativeStart;
+  }
+
   updatePlotSettings() {
     this.setTitle(this._wesplot_options.Title);
     for (const [index, column] of this._wesplot_options.Columns.entries()) {
       this._config!.data.datasets[index].label = column;
     }
+
+    let x_min: number | undefined = this._wesplot_options.XMin;
+    let x_max: number | undefined = this._wesplot_options.XMax;
+
+    // If the X-axis is a timeseries, auto axis is set with NaN, undefined does not reset it to auto
+    // If the X-axis is a linear scale, auto axis is set with undefined, NaN does not reset it to auto
+    // To set X-limits to auto, we always set NaN the plot options
+    // Check if the axis is a linear scale and instead set auto x limits (NaN) to undefined if required
+    if (!this.xIsTime()) {
+      if (Number.isNaN(this._wesplot_options.XMin)) {
+        x_min = undefined;
+      }
+      if (Number.isNaN(this._wesplot_options.XMax)) {
+        x_max = undefined;
+      }
+    }
+
     merge(this._config, {
       options: {
         scales: {
           x: {
             title: { text: this._wesplot_options.XLabel },
-            min: this._wesplot_options.XMin,
-            max: this._wesplot_options.XMax,
+            min: x_min,
+            max: x_max,
           },
           y: {
             title: { text: this._wesplot_options.YLabel },
