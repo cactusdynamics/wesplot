@@ -1,6 +1,10 @@
 import { Chart, ChartConfiguration } from "chart.js/auto";
+
 import zoomPlugin from "chartjs-plugin-zoom";
 import "chartjs-adapter-date-fns";
+import type { ZoomPluginOptions } from "chartjs-plugin-zoom/types/options";
+import { cloneDeep, merge } from "lodash-es";
+
 import {
   ChartButtons,
   DataRow,
@@ -8,13 +12,13 @@ import {
   SettingsPanelInputs,
   WesplotOptions,
 } from "./types";
-import { cloneDeep, merge } from "lodash-es";
-import classes from "./styles/dynamic-styles.module.css";
-import type { ZoomPluginOptions } from "chartjs-plugin-zoom/types/options";
 import { LimitInput } from "./limits";
 
-Chart.defaults.font.size = 16;
+import classes from "./styles/dynamic-styles.module.css";
+
 Chart.register(zoomPlugin);
+
+Chart.defaults.font.size = 16;
 Chart.defaults.elements.point.borderWidth = 0;
 Chart.defaults.elements.point.radius = 1;
 // Chart.defaults.elements.point.
