@@ -1,24 +1,90 @@
 wesplot
 =======
 
-A real time plotting tool that takes stdin data and pipes it into websocket and
-into a JavaScript interactive chart. Usable both on a local computer and on a
-remote server.
+A live/real-time plotting tool that takes stdin data and pipes it into
+websocket and into a JavaScript interactive chart. The backend can run on both
+a local computer or on a remote server. The front-end runs in a browser which
+means it can run on any device (including mobile devices) that can connect to
+the backend.
 
-It's inspired by ttyplot except we leverage the power of the web. Amazing.
+`DEMO GIF HERE`
 
 Features
 --------
 
 ### Stdin → browser plotting live streamed or replayed data
 
+Wesplot is designed to work with [Unix
+pipelines](https://en.wikipedia.org/wiki/Pipeline_(Unix)). It streams data
+written to its standard input (stdin) to one or more browser windows via
+[websockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API),
+where it is then plotted as a scatter plot.
+
+By leveraging the Unix pipeline, there is an endless amount of use cases for
+wesplot. Some simple examples are:
+
+1. **Monitor live CPU, memory, IO, network usage**: By using tools like
+   [`sar`](https://linux.die.net/man/1/sar), live system usage information can
+   be streamed to stdout. If this information is parsed (usually with `awk`),
+   it can be piped into wesplot and live system usage can be plotted directly
+   against the browser. See [Example use cases](#example-use-cases) for
+   some example commands.
+2. **Plot CSV data directly from the terminal and generate publication-quality
+   plots**: By using [`cat`](https://linux.die.net/man/1/cat), CSV files can be
+   piped to wesplot. Wesplot can use values from one column to be the X-axis
+   coordinates and the rest of the columns as different series.
+3. **Visualize real-time data from remote devices**: Wesplot can be running
+   continuously on a remote device such as a server or an IoT device. For
+   example, the current network throughput on a server can be piped to a
+   persistent wesplot instance which can be connected to and visualized
+   remotely. Another example could be an air-quality sensor that pipe its data
+   to wesplot which can then be visualized remotely.
+
 ### Customizable, interactive plots via command line and GUI
 
-### Simultaneous streams to multiple local and remote devices
+Wesplot is designed to export quality plots suitable for documentations,
+presentations, and publications. To support this, the chart title, axis labels,
+axis limits, and axis units can be customized both via command-line options as
+well as via the settings panel with the browser interface.
 
-### Easy single binary installation
+DEMO GIF OF SETTINGS PANEL
 
-### Drop-in replacement to `ttyplot`
+### Simultaneous streams to multiple devices
+
+Data piped to wesplot can be visualized simultaneously from multiple browser
+tabs and even multiple devices, including mobile devices such as tablets and
+phones. One creative use of this is to visualize data coming from a mobile
+robot with wesplot on a mobile device as it is being tested in the field.
+
+### Easy single binary installation with cross platform support
+
+Wesplot is designed to be very simple to install. Simply download the
+executable and put it in your `$PATH` and you're good to go. It supports all
+major platform including Linux, OS X, and Windows for both x86 and ARM.
+
+Installation instruction
+------------------------
+
+1. Download the appropriate version of wesplot for your OS and architecture
+   from the [latest release](https://github.com/cactusdynamics/wesplot/releases/latest).
+2. Rename the executable to `wesplot`.
+3. Copy the downloaded executable to a place in your `$PATH`. For example, you
+   can copy `wesplot` to `/usr/local/bin`.
+4. Make the `wesplot` binary executable via `chmod +x wesplot`.
+
+### Linux-specific instructions
+
+```console
+TODO
+```
+
+### OSX-specific instructions
+
+```console
+TODO
+```
+
+TODO: notes about gatekeeper...
 
 Example use cases
 -----------------
@@ -37,7 +103,7 @@ Example use cases
       CPU usage (Linux via SAR)
     </td>
     <td>
-      <code>S_TIME_FORMAT=ISO sar 1 | awk '{ if ($NF ~ /^[0-9]+[.][0-9]*$/) print 100-$NF; fflush(); }' | wesplot -t "CPU Utilization" -c "CPU%" -M 0 -m 100</code>
+      <code>S_TIME_FORMAT=ISO sar 1 | awk '{ if ($NF ~ /^[0-9]+[.]?[0-9]*$/) print 100-$NF; fflush(); }' | wesplot -t "CPU Utilization" -c "CPU%" -M 0 -m 100</code>
     </td>
     <td>
     </td>
@@ -118,79 +184,50 @@ Example use cases
 
 </table>
 
-### Visualizing metrics on a remote devices (such as a phone)
-
 ### Quick data file (CSV) plotting
+
+CSV and TSV (tab/space-separated values) files can be piped into wesplot to be
+plotted.
 
 ### Formatting and saving plots for publication
 
-Installation
-------------
+### Advanced usage
 
-Features
---------
+- Use `awk` to process data before piping to wesplot
+- Using wesplot with [ROS](ros.org/) (Robot Operating System)
 
-- [x] Ability to stream data from stdin and plot in the browser
-  - [x] There can many time series in a single data stream.
-  - [ ] The different series can be comma-separated or space-separated.
-  - [x] Can handle infinite streams by caching only the most recent X data points (configurable).
-  - [x] Does not lose any messages unless it is expired.
-  - [ ] If the data stream ends, the data is cached and can be sent to the browser until the backend is stopped.
-    - [ ] This opens the door for plotting a csv file via `cat file.csv | wesplot`.
-    - [ ] For streams that are known to end, the backend and frontend cache will effectively be infinite.
-  - [ ] Ability to select a column as the timestamp
-  - [x] Ability to generate timestamp if doesn't exist in source data
-  - [ ] Ability to use non-time values as the x axis.
-  - [x] Ability to customize the plot directly from the command line.
-  - [ ] Automatically open the local browser upon command.
-  - [ ] Proper CORS rules
-- [x] Single binary deployment with executable, HTML, CSS, JavaScript all bundled in.
-  - [ ] Mac
-  - [ ] Linux
-  - [ ] X86
-  - [ ] ARM
-- [ ] Multiple concurrent browser streaming session
-  - [ ] From localhost
-  - [ ] From remote hosts
-- [ ] UI feature
-  - [ ] Pause/resume: when paused, data is continues to be buffered. When resuming, jumps to live.
-  - [ ] Stream indicator to indicate if UI is connected to backend and if data stream is not EOF.
-  - [ ] Mobile support
-  - [ ] Proper error message display
-  - [ ] Dark mode
-  - [ ] Firefox and Chrome and mobile browsers
-  - [ ] Fast on the Raspberry Pi
-- [ ] Plot feature
-  - [ ] Plot formatting
-    - [ ] Title
-    - [ ] Axis label
-    - [ ] Axis limits
-    - [ ] Units
-    - [ ] Grid lines
-    - [ ] Axis format (time vs not time)
-    - [ ] Colors and legends
-    - [ ] Tooltip (toggleble)
-    - [ ] Line vs bar charts
-  - [ ] All plot formatting can be done either via command line from backend or directly in front end.
-  - [ ] Zoom, pan, freeze limits, restore to default view
-  - [ ] SVG export
-  - [ ] Cached size
-  - [ ] Consistent lodash versions
-  - [ ] Chart.js tree-shaking
+Frequently asked questions (FAQ)
+--------------------------------
 
-### Long term goals
+### How can I format the chart with axis labels, limits, titles, and so on?
 
-- Backend operator pipelines for easy manipulation (imagine dividing every number by 1024).
-- Backend can read binary formats (protobuf, Arrow).
-- Backend -> frontend streaming with binary format (arrow/CBOR/whatever)
-- Front-end multiple panels for plots.
-  - This means the plot div must be created dynamically (which is mostly easy).
-  - Splitting layout is relatively easy with flexbox, but requires a bit of finesse with respect to the height and width and expansion rules.
-  - However, resizing the layout is more difficult.
-  - Once the layout is resized, exporting and importing the layout is relatively annoying.
-  - This also means the backend options becomes meaningless. Things like the title needs to be duplicated multiple times.
-    - Likely a config file can be passed to the backend which is then fed to the frontend which contains both the layout and the chart options.
+### Can I start multiple wesplot sessions?
 
+Yes. Wesplot will automatically find a port starting from 5273 for up to 200
+times. If all ports between 5273 and 5473 are taken, you can manually specify a
+port via the command line option `--port`. For example: `wesplot --port 1234`
+will start wesplot on port 1234.
+
+### Can I view wesplot from multiple browser windows/tabs?
+
+Yes. In fact the browser windows do not even have to reside on the same
+computer!
+
+### Can I plot multiple data with multiple columns on the same plot?
+
+### Why am I getting `cannot parse float, ignoring...`?
+
+### How do I set the time value for the data point to be 0 and subsequent data points to be relative from the first?
+
+### How can I plot data whose _x_ values are not time values?
+
+### How can I plot data that already have timestamps as a column?
+
+### How can I plot data from a CSV or TSV file?
+
+### How can I plot data series spanning multiple lines in the same chart?
+
+### How can I save the live data as I'm plotting it?
 
 Development setup
 -----------------
@@ -203,3 +240,10 @@ Development setup
 - In a separate terminal, Run `make frontend-dev` which will start the front end development server.
 - Go to http://localhost:5273 to see the frontend.
   - Note that while you can run multiple wesplots on different ports with the binary, the development setup will only work with a single server as all front-end will listen to the server at the default port (5274).
+
+Building the production binary from source
+------------------------------------------
+
+- Make sure you have all development dependencies installed.
+- Run `make prod`.
+- The resulting binary will be in `build/wesplot`.
