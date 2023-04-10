@@ -7,7 +7,7 @@ a local computer or on a remote server. The front-end runs in a browser which
 means it can run on any device (including mobile devices) that can connect to
 the backend.
 
-`DEMO GIF HERE`
+[demo1.webm](https://user-images.githubusercontent.com/338100/230804080-2396edf2-6744-4a84-ba38-8703b4e10eb4.webm)
 
 Features
 --------
@@ -46,8 +46,6 @@ Wesplot is designed to export quality plots suitable for documentations,
 presentations, and publications. To support this, the chart title, axis labels,
 axis limits, and axis units can be customized both via command-line options as
 well as via the settings panel with the browser interface.
-
-DEMO GIF OF SETTINGS PANEL
 
 ### Simultaneous streams to multiple devices
 
