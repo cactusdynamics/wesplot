@@ -78,7 +78,7 @@ func (r *CsvStringReader) Read(ctx context.Context) ([]string, error) {
 
 		switch err.(type) {
 		case *csv.ParseError:
-			logger.WithError(err).Warn("unable to parse CSV, ignoring...")
+			logger.WithError(err).Debug("unable to parse CSV, ignoring...")
 			return nil, errIgnoreThisRow
 		default:
 			logger.WithError(err).Error("unable to read CSV")

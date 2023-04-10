@@ -152,8 +152,8 @@ Frequently asked questions (FAQ)
 
 ### Can I start multiple wesplot sessions?
 
-Yes. Wesplot will automatically find a port starting from 5273 for up to 200
-times. If all ports between 5273 and 5473 are taken, you can manually specify a
+Yes. Wesplot will automatically find a port starting from 5274 for up to 200
+times. If all ports between 5274 and 5474 are taken, you can manually specify a
 port via the command line option `--port`. For example: `wesplot --port 1234`
 will start wesplot on port 1234.
 

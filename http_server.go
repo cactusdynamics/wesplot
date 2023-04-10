@@ -26,17 +26,19 @@ type HttpServer struct {
 	host            string
 	port            uint16
 	metadata        Metadata
+	flushInterval   time.Duration
 	mux             *http.ServeMux
 	logger          logrus.FieldLogger
 }
 
-func NewHttpServer(dataBroadcaster *DataBroadcaster, host string, port uint16, metadata Metadata) *HttpServer {
+func NewHttpServer(dataBroadcaster *DataBroadcaster, host string, port uint16, metadata Metadata, flushInterval time.Duration) *HttpServer {
 
 	s := &HttpServer{
 		dataBroadcaster: dataBroadcaster,
 		host:            host,
 		port:            port,
 		metadata:        metadata,
+		flushInterval:   flushInterval,
 		mux:             http.NewServeMux(),
 		logger:          logrus.WithField("tag", "HttpServer"),
 	}
@@ -76,7 +78,6 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 
 		// We buffer data for at least X milliseconds or if it reaches capacity before sending it to the client.
 		// Note: tune or allow configuration
-		const bufferTimeCapacity = 50 * time.Millisecond
 		bufferItemCapacity := Min(s.metadata.WindowSize, 25000)
 		lastSendTime := time.Now()
 		dataBuffer := make([]DataRow, 0, bufferItemCapacity)
@@ -122,7 +123,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 				}
 
 				dataBuffer = append(dataBuffer, dataRow)
-				if len(dataBuffer) >= bufferItemCapacity || time.Since(lastSendTime) > bufferTimeCapacity {
+				if len(dataBuffer) >= bufferItemCapacity || time.Since(lastSendTime) > s.flushInterval {
 					logger.WithField("buflen", len(dataBuffer)).Debug("buffer capacity reached, flushing")
 					err := flushBufferToWebsocket()
 					if err != nil {
@@ -132,7 +133,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 
-			case <-time.After(bufferTimeCapacity):
+			case <-time.After(s.flushInterval):
 				if len(dataBuffer) > 0 {
 					logger.WithField("buflen", len(dataBuffer)).Debug("timed out waiting for more data, flushing")
 					err := flushBufferToWebsocket()
