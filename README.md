@@ -164,8 +164,6 @@ computer!
 
 ### Can I plot multiple data with multiple columns on the same plot?
 
-### Why am I getting `cannot parse float, ignoring...`?
-
 ### How do I set the time value for the data point to be 0 and subsequent data points to be relative from the first?
 
 ### How can I plot data whose _x_ values are not time values?
