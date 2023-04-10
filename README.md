@@ -78,11 +78,22 @@ TODO
 
 ### OSX-specific instructions
 
-```console
-TODO
-```
+1. After following the instructions above, you must execute `wesplot` once.
+2. At this point, OS X will open a dialog box that says: "wesplot is from an
+   unidentified developer" and prompt you to either cancel or move `wesplot` to
+   trash. Click `Cancel`.
+3. Open the `System Settings`, go to the `Privacy & Security` in the side bar,
+   then go to `Security` (scroll down). You should be able to see a line of
+   text that says "wesplot was blocked from opening because it is not from an
+   identified developer". Click `Open Anyway` next to that.
+4. Launching `wesplot` again from this point on will work.
 
-TODO: notes about gatekeeper...
+You can blame Apple for this [feature](https://en.wikipedia.org/wiki/Gatekeeper_(macOS)).
+
+If the above instruction is out-of-date, please consult with Apple's official
+documentation on this: https://support.apple.com/en-ca/guide/mac-help/mh40616/mac.
+
+If you don't trust the binary, you can always [build from the source](#building-the-production-binary-from-source).
 
 Example use cases
 -----------------
