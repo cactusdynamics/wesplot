@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/cactusdynamics/wesplot"
 	"github.com/jessevdk/go-flags"
@@ -31,7 +32,8 @@ var options struct {
 	NumColumns int      `short:"n" long:"num-columns" description:"The number of columns expected for the input data. If specified, input data rows with different number of columns will be ignored."`
 	Columns    []string `short:"c" long:"columns" description:"The columns labels for the input data. This option supercedes num-columns and will also be used to validate the input data like --num-columns."`
 
-	WindowSize int `short:"w" long:"window-size" default:"1800" description:"the number of data rows cached on a rolling windows basis. default: 1800 which means 1800 data points will be cached by the tool and sent any time the browser connects"`
+	WindowSize    int           `short:"w" long:"window-size" default:"1800" description:"the number of data rows cached on a rolling windows basis. default: 1800 which means 1800 data points will be cached by the tool and sent any time the browser connects"`
+	FlushInterval time.Duration `long:"flush-interval" default:"250ms" description:"the flush interval dictates how long the backend waits before flushing the data to the frontend. If the frontend is too slow and cannot keep up updating the plot, increase this number"`
 
 	xIsTimestamp bool
 }
@@ -128,7 +130,7 @@ func main() {
 	}
 
 	dataBroadcaster := wesplot.NewDataBroadcaster(dataRowReader, options.WindowSize, options.Tee)
-	server := wesplot.NewHttpServer(dataBroadcaster, options.Host, options.Port, metadata)
+	server := wesplot.NewHttpServer(dataBroadcaster, options.Host, options.Port, metadata, options.FlushInterval)
 
 	dataBroadcaster.Start(context.Background())
 	server.Run()
