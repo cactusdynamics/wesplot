@@ -193,15 +193,10 @@ Example use cases
 
 </table>
 
-### Quick data file (CSV) plotting
+### More usage examples
 
-CSV and TSV (tab/space-separated values) files can be piped into wesplot to be
-plotted.
-
-### Formatting and saving plots for publication
-
-### Advanced usage
-
+- Advanced system metrics monitoring
+- Data file (CSV) plotting
 - Use `awk` to process data before piping to wesplot
 - Using wesplot with [ROS](ros.org/) (Robot Operating System)
 
