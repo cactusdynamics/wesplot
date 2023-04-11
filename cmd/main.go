@@ -41,6 +41,9 @@ var options struct {
 func parseOptions() {
 	_, err := flags.ParseArgs(&options, os.Args)
 	if err != nil {
+		if flags.WroteHelp(err) {
+			os.Exit(0)
+		}
 		panic(err)
 	}
 
