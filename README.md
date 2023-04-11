@@ -1,6 +1,9 @@
 wesplot
 =======
 
+**Note: wesplot is currently not 100% documented. This will be addressed as we
+progress to version 1.0**.
+
 A live/real-time plotting tool that takes stdin data and pipes it into
 websocket and into a JavaScript interactive chart. The backend can run on both
 a local computer or on a remote server. The front-end runs in a browser which
