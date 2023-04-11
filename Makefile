@@ -2,7 +2,7 @@
 
 DIRTY_TREE := $(shell git diff-index --quiet HEAD -- || echo '+dirty')
 COMMIT     := $(addsuffix $(DIRTY_TREE),$(shell git rev-parse --short HEAD))
-VERSION    := 0.99.0+$(COMMIT)
+VERSION    := 1.0.0-rc1+$(COMMIT)
 
 BUILD_FLAGS := -tags prod -ldflags "-X github.com/cactusdynamics/wesplot.Version=$(VERSION)"
 
