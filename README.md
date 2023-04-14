@@ -153,6 +153,8 @@ Frequently asked questions (FAQ)
 
 ### How can I format the chart with axis labels, limits, titles, and so on?
 
+When running wesplot, you can specify these via command line flag, such as `--xlabel` or `--title`. Use `wesplot --help` to see all the options. Alternatively, you can use the gear icon in the top right to set these.
+
 ### Can I start multiple wesplot sessions?
 
 Yes. Wesplot will automatically find a port starting from 5274 for up to 200
@@ -169,15 +171,33 @@ computer!
 
 ### How do I set the time value for the data point to be 0 and subsequent data points to be relative from the first?
 
+You can do this using the `--relative-start` flag.
+
 ### How can I plot data whose _x_ values are not time values?
+
+Use the `--xindex` flag, and specify the column number for the _x_ values.
 
 ### How can I plot data that already have timestamps as a column?
 
+Use the `--tindex` flag, and specify the column number for the timestamps.
+
 ### How can I plot data from a CSV or TSV file?
+
+You can pipe a CSV or TSV file directy into wesplot like this: 
+
+```console
+cat my_data.csv | wesplot
+```
 
 ### How can I plot data series spanning multiple lines in the same chart?
 
 ### How can I save the live data as I'm plotting it?
+
+You can use wesplot in tee mode with the `T` flag. You can then both visualize the data with wesplot, and pipe the data into a file.
+
+```
+my_data_source | wesplot -T > output.csv
+```
 
 Development setup
 -----------------
