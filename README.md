@@ -63,8 +63,8 @@ Wesplot is designed to be very simple to install. Simply download the
 executable and put it in your `$PATH` and you're good to go. It supports all
 major platform including Linux, OS X, and Windows for both x86 and ARM.
 
-Installation instruction
-------------------------
+Installation instructions
+-------------------------
 
 1. Download the appropriate version of wesplot for your OS and architecture
    from the [latest release](https://github.com/cactusdynamics/wesplot/releases/latest).
@@ -167,7 +167,8 @@ will start wesplot on port 1234.
 Yes. In fact the browser windows do not even have to reside on the same
 computer!
 
-### Can I plot multiple data with multiple columns on the same plot?
+### Can I plot multi-series data with wesplot?
+Yes. Data with multiple columns is interpreted as multi-series data with wesplot. Pipe each column in separated by a column or tab. Similarly, CSV files with multiple data columns will be plotted with each column as a data series.
 
 ### How do I set the time value for the data point to be 0 and subsequent data points to be relative from the first?
 
@@ -188,8 +189,6 @@ You can pipe a CSV or TSV file directy into wesplot like this:
 ```console
 cat my_data.csv | wesplot
 ```
-
-### How can I plot data series spanning multiple lines in the same chart?
 
 ### How can I save the live data as I'm plotting it?
 
