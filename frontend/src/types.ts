@@ -15,6 +15,7 @@ export interface WesplotOptions {
   XMin?: number;
   XMax?: number;
   YUnit: string;
+  ShowLine: boolean;
 }
 
 export interface Metadata {
@@ -44,6 +45,7 @@ export interface SettingsPanelInputs {
   y_max: LimitInput;
   y_label: HTMLInputElement;
   y_unit: HTMLInputElement;
+  show_line: HTMLInputElement;
   relative_start: HTMLInputElement;
 }
 

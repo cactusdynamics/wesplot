@@ -29,7 +29,6 @@ const default_config: ChartConfiguration<"scatter"> = {
     datasets: [],
   },
   options: {
-    showLine: true,
     maintainAspectRatio: false,
     scales: {
       x: {
@@ -149,6 +148,9 @@ export class WesplotChart {
       ),
       y_label: document.getElementById("settings-ylabel")! as HTMLInputElement,
       y_unit: document.getElementById("settings-yunit")! as HTMLInputElement,
+      show_line: document.getElementById(
+        "settings-showline"
+      )! as HTMLInputElement,
       relative_start: document.getElementById(
         "settings-relative-start"
       )! as HTMLInputElement,
@@ -249,7 +251,7 @@ export class WesplotChart {
     // =======================
 
     this._config = cloneDeep(default_config); // Deep copy
-    this._wesplot_options = metadata.WesplotOptions;
+    this._wesplot_options = cloneDeep(metadata.WesplotOptions);
 
     // Set a linear timescape if we are not using timestamped data or if we have a relative start
     if (!this.xIsTime()) {
@@ -291,6 +293,11 @@ export class WesplotChart {
     this.setTitle(this._wesplot_options.Title);
     for (const [index, column] of this._wesplot_options.Columns.entries()) {
       this._config!.data.datasets[index].label = column;
+      this._config!.data.datasets[index].data = this._config!.data.datasets[
+        index
+      ].data.map((elem) => elem);
+      this._config!.data.datasets[index].showLine =
+        this._wesplot_options.ShowLine;
     }
 
     let x_min: number | undefined = this._wesplot_options.XMin;
@@ -416,8 +423,8 @@ export class WesplotChart {
     // Must use NaN to reset limits back to auto
     this._wesplot_options.XMin = NaN;
     this._wesplot_options.XMax = NaN;
-    this._wesplot_options.YMin = NaN;
-    this._wesplot_options.YMax = NaN;
+    this._wesplot_options.YMin = this._metadata.WesplotOptions.YMin;
+    this._wesplot_options.YMax = this._metadata.WesplotOptions.YMax;
     this.updatePlotSettings();
     this._chart.resetZoom();
   }
@@ -480,6 +487,8 @@ export class WesplotChart {
 
     this._settings.y_label.value = this._wesplot_options.YLabel;
     this._settings.y_unit.value = this._wesplot_options.YUnit;
+
+    this._settings.show_line.checked = this._wesplot_options.ShowLine;
   }
 
   private closeSettings() {
@@ -537,6 +546,8 @@ export class WesplotChart {
 
     this._wesplot_options.YLabel = this._settings.y_label.value;
     this._wesplot_options.YUnit = this._settings.y_unit.value;
+
+    this._wesplot_options.ShowLine = this._settings.show_line.checked;
 
     this.updatePlotSettings();
     this.closeSettings();
