@@ -148,9 +148,6 @@ export class WesplotChart {
       ),
       y_label: document.getElementById("settings-ylabel")! as HTMLInputElement,
       y_unit: document.getElementById("settings-yunit")! as HTMLInputElement,
-      show_line: document.getElementById(
-        "settings-showline"
-      )! as HTMLInputElement,
       relative_start: document.getElementById(
         "settings-relative-start"
       )! as HTMLInputElement,
@@ -253,6 +250,10 @@ export class WesplotChart {
     this._config = cloneDeep(default_config); // Deep copy
     this._wesplot_options = cloneDeep(metadata.WesplotOptions);
 
+    // Set whether or not to show a line from backend flag
+    // Toggling showLine from the frontend is buggy, see https://github.com/chartjs/Chart.js/issues/11333
+    this._config.options!.showLine = this._wesplot_options.ShowLine;
+
     // Set a linear timescape if we are not using timestamped data or if we have a relative start
     if (!this.xIsTime()) {
       this._config.options!.scales!.x!.type = "linear";
@@ -296,8 +297,6 @@ export class WesplotChart {
       this._config!.data.datasets[index].data = this._config!.data.datasets[
         index
       ].data.map((elem) => elem);
-      this._config!.data.datasets[index].showLine =
-        this._wesplot_options.ShowLine;
     }
 
     let x_min: number | undefined = this._wesplot_options.XMin;
@@ -487,8 +486,6 @@ export class WesplotChart {
 
     this._settings.y_label.value = this._wesplot_options.YLabel;
     this._settings.y_unit.value = this._wesplot_options.YUnit;
-
-    this._settings.show_line.checked = this._wesplot_options.ShowLine;
   }
 
   private closeSettings() {
@@ -546,8 +543,6 @@ export class WesplotChart {
 
     this._wesplot_options.YLabel = this._settings.y_label.value;
     this._wesplot_options.YUnit = this._settings.y_unit.value;
-
-    this._wesplot_options.ShowLine = this._settings.show_line.checked;
 
     this.updatePlotSettings();
     this.closeSettings();
