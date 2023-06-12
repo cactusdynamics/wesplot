@@ -298,9 +298,6 @@ export class WesplotChart {
     this.setTitle(this._wesplot_options.Title);
     for (const [index, column] of this._wesplot_options.Columns.entries()) {
       this._config!.data.datasets[index].label = column;
-      this._config!.data.datasets[index].data = this._config!.data.datasets[
-        index
-      ].data.map((elem) => elem);
     }
 
     let x_min: number | undefined = this._wesplot_options.XMin;
