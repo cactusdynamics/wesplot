@@ -13,20 +13,21 @@ import (
 )
 
 var options struct {
-	Host    string `short:"h" long:"host" default:"0.0.0.0" description:"the IP to start the server on. default to 0.0.0.0 (all interfaces)"`
+	Host    string `short:"h" long:"host" default:"0.0.0.0" description:"the IP to start the server on. Default to 0.0.0.0 (all interfaces)"`
 	Port    uint16 `short:"p" long:"port" default:"5274"`
 	Verbose bool   `short:"v" long:"verbose" description:"Show debug logs"`
-	Tee     bool   `short:"T" long:"--tee" description:"write the data (and generated timestamp if applicable) in a CSV into stdout in addition to visualizing with the plot"`
+	Tee     bool   `short:"T" long:"--tee" description:"Write the data (and generated timestamp if applicable) in a CSV into stdout in addition to visualizing with the plot"`
 
-	Title  string   `short:"t" long:"title" default:"Wesplot" description:"Title of the plot. Defaults to 'Plot'"`
-	YMin   *float64 `short:"m" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
-	YMax   *float64 `short:"M" long:"ymax" description:"The max value for y (default: auto scaling)"`
-	YUnit  string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
-	XLabel string   `long:"xlabel" description:"Label for the X axis"`
-	YLabel string   `long:"ylabel" description:"Label for the Y axis"`
+	Title     string   `short:"t" long:"title" default:"Wesplot" description:"Title of the plot. Defaults to 'Plot'"`
+	YMin      *float64 `short:"m" long:"ymin" description:"The minimum value for y (default: auto scaling)"`
+	YMax      *float64 `short:"M" long:"ymax" description:"The max value for y (default: auto scaling)"`
+	YUnit     string   `short:"u" long:"yunit" description:"The unit for the Y axis"`
+	XLabel    string   `long:"xlabel" description:"Label for the X axis"`
+	YLabel    string   `long:"ylabel" description:"Label for the Y axis"`
+	ChartType string   `long:"chart-type" choice:"scatter" choice:"line" default:"line" description:"The type of chart to plot (scatter or line). Defaults to 'line'"`
 
-	XIndex        int  `short:"x" long:"xindex" default:"-1" description:"the index for the x column. if not specified, the x value is generated as the receive timestamp. If specified, this is will let the front end know the x value is not a timestamp. Mutually exclusive with --tindex."`
-	TIndex        int  `long:"tindex" default:"-1" description:"the index for the timestamp column. if not specified, the x value is generated as the receive timestamp. Mutually exclusive with --xindex."`
+	XIndex        int  `short:"x" long:"xindex" default:"-1" description:"The index for the x column. If not specified, the x value is generated as the receive timestamp. If specified, this is will let the front end know the x value is not a timestamp. Mutually exclusive with --tindex."`
+	TIndex        int  `long:"tindex" default:"-1" description:"The index for the timestamp column. If not specified, the x value is generated as the receive timestamp. Mutually exclusive with --xindex."`
 	RelativeStart bool `short:"s" long:"relative-start" description:"If this is specified, the X values will be normalized by the first value. i.e x_i = x_original_i - x_0. Applies to both timestamps and non timestamps."`
 
 	NumColumns int      `short:"n" long:"num-columns" description:"The number of columns expected for the input data. If specified, input data rows with different number of columns will be ignored."`
@@ -114,13 +115,14 @@ func main() {
 		XIsTimestamp:  options.xIsTimestamp,
 		RelativeStart: options.RelativeStart,
 		WesplotOptions: wesplot.WesplotOptions{
-			Title:   options.Title,
-			Columns: options.Columns, // TODO: dynamic columns
-			XLabel:  options.XLabel,
-			YLabel:  options.YLabel,
-			YMin:    options.YMin,
-			YMax:    options.YMax,
-			YUnit:   options.YUnit,
+			Title:     options.Title,
+			Columns:   options.Columns, // TODO: dynamic columns
+			XLabel:    options.XLabel,
+			YLabel:    options.YLabel,
+			YMin:      options.YMin,
+			YMax:      options.YMax,
+			YUnit:     options.YUnit,
+			ChartType: options.ChartType,
 		},
 	}
 

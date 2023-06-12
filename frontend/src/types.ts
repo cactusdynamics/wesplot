@@ -15,6 +15,7 @@ export interface WesplotOptions {
   XMin?: number;
   XMax?: number;
   YUnit: string;
+  ChartType: string;
 }
 
 export interface Metadata {

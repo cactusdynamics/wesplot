@@ -29,7 +29,6 @@ const default_config: ChartConfiguration<"scatter"> = {
     datasets: [],
   },
   options: {
-    showLine: true,
     maintainAspectRatio: false,
     scales: {
       x: {
@@ -249,7 +248,15 @@ export class WesplotChart {
     // =======================
 
     this._config = cloneDeep(default_config); // Deep copy
-    this._wesplot_options = metadata.WesplotOptions;
+    this._wesplot_options = cloneDeep(metadata.WesplotOptions);
+
+    // Set whether or not to show a line from backend flag
+    // Toggling showLine from the frontend is buggy, see https://github.com/chartjs/Chart.js/issues/11333
+    if (this._wesplot_options.ChartType === "scatter") {
+      this._config.options.showLine = false;
+    } else if (this._wesplot_options.ChartType === "line") {
+      this._config.options.showLine = true;
+    }
 
     // Set a linear timescape if we are not using timestamped data or if we have a relative start
     if (!this.xIsTime()) {
@@ -416,8 +423,8 @@ export class WesplotChart {
     // Must use NaN to reset limits back to auto
     this._wesplot_options.XMin = NaN;
     this._wesplot_options.XMax = NaN;
-    this._wesplot_options.YMin = NaN;
-    this._wesplot_options.YMax = NaN;
+    this._wesplot_options.YMin = this._metadata.WesplotOptions.YMin;
+    this._wesplot_options.YMax = this._metadata.WesplotOptions.YMax;
     this.updatePlotSettings();
     this._chart.resetZoom();
   }
