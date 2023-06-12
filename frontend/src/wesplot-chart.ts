@@ -252,7 +252,11 @@ export class WesplotChart {
 
     // Set whether or not to show a line from backend flag
     // Toggling showLine from the frontend is buggy, see https://github.com/chartjs/Chart.js/issues/11333
-    this._config.options!.showLine = this._wesplot_options.ShowLine;
+    if (this._wesplot_options.ChartType === "scatter") {
+      this._config.options.showLine = false;
+    } else if (this._wesplot_options.ChartType === "line") {
+      this._config.options.showLine = true;
+    }
 
     // Set a linear timescape if we are not using timestamped data or if we have a relative start
     if (!this.xIsTime()) {

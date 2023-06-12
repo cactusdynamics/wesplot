@@ -1,14 +1,14 @@
 package wesplot
 
 type WesplotOptions struct {
-	Title    string
-	Columns  []string
-	XLabel   string
-	YLabel   string
-	YMin     *float64 `json:",omitempty"`
-	YMax     *float64 `json:",omitempty"`
-	YUnit    string
-	ShowLine bool
+	Title     string
+	Columns   []string
+	XLabel    string
+	YLabel    string
+	YMin      *float64 `json:",omitempty"`
+	YMax      *float64 `json:",omitempty"`
+	YUnit     string
+	ChartType string
 }
 
 type Metadata struct {
