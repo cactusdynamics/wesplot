@@ -6,12 +6,11 @@ import (
 	"encoding/csv"
 	"errors"
 	"io"
+	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 // The pipeline is supposed to start with an io.Reader (likely reading stdin),
@@ -27,9 +26,13 @@ type StringReader interface {
 	Read(context.Context) ([]string, error)
 }
 
-type DataRow struct {
+type DataRowData struct {
 	X  float64
 	Ys []float64
+}
+
+type DataRow struct {
+	DataRowData
 
 	streamEnded bool
 	streamErr   error
@@ -70,18 +73,18 @@ func (r *CsvStringReader) Read(ctx context.Context) ([]string, error) {
 	r.lineCount++
 
 	if err != nil {
-		logger := logrus.WithFields(logrus.Fields{
-			"tag":     "CsvString",
-			"line":    line,
-			"lineNum": r.lineCount,
-		})
+		logger := slog.Default().With(
+			"tag", "CsvString",
+			"line", line,
+			"lineNum", r.lineCount,
+		)
 
 		switch err.(type) {
 		case *csv.ParseError:
-			logger.WithError(err).Debug("unable to parse CSV, ignoring...")
+			logger.With("error", err).Debug("unable to parse CSV, ignoring...")
 			return nil, errIgnoreThisRow
 		default:
-			logger.WithError(err).Error("unable to read CSV")
+			logger.With("error", err).Error("unable to read CSV")
 			return nil, err
 		}
 	}
@@ -119,7 +122,7 @@ func (r *RelaxedStringReader) Read(ctx context.Context) ([]string, error) {
 	line := r.scanner.Text()
 	err := r.scanner.Err()
 	if err != nil {
-		logrus.WithField("tag", "RelaxedString").WithError(err).Error("unable to read line")
+		slog.Default().With("tag", "RelaxedString", "error", err).Error("unable to read line")
 		return nil, err
 	}
 
@@ -129,13 +132,6 @@ func (r *RelaxedStringReader) Read(ctx context.Context) ([]string, error) {
 	})
 
 	return splittedLine, nil
-}
-
-// Generates the current unix timestamp in seconds.
-func NowXGenerator(line []float64) float64 {
-	// Use Micro because we want to preserve the timestamp to at least millisecond
-	// accuracy. using time.Now().Unix() will truncate.
-	return float64(time.Now().UnixMicro()) / 1000000.0
 }
 
 // Creates a DataRowReader based on text input. Unrecognized/unparsable lines
@@ -150,9 +146,6 @@ type TextToDataRowReader struct {
 	// will be put into DataRow.Ys.
 	XIndex int
 
-	// The generator function. Defaults to NowXGenerator.
-	XGenerator func([]float64) float64
-
 	// The labels of the columns excluding the X column.
 	Columns []string
 
@@ -166,10 +159,10 @@ func (r *TextToDataRowReader) Read(ctx context.Context) (DataRow, error) {
 		return DataRow{}, err
 	}
 
-	logger := logrus.WithFields(logrus.Fields{
-		"tag":  "TextToData",
-		"line": line,
-	})
+	logger := slog.Default().With(
+		"tag", "TextToData",
+		"line", line,
+	)
 
 	dataRow := DataRow{}
 
@@ -189,17 +182,18 @@ func (r *TextToDataRowReader) Read(ctx context.Context) (DataRow, error) {
 	}
 
 	if r.ExpectExactColumnCount && (len(r.Columns) != len(dataRow.Ys)) {
-		logger.Warnf("expected column count (%d) is not observed (%d). use `wesplot -n %d` to ensure this row is read", len(r.Columns), len(dataRow.Ys), len(dataRow.Ys))
+		logger.Warn(
+			"expected column count is not observed; use `wesplot -n` to ensure this row is read",
+			"expectedColumns", len(r.Columns),
+			"observedColumns", len(dataRow.Ys),
+		)
 		return DataRow{}, errIgnoreThisRow
 	}
 
 	if r.XIndex < 0 {
-		xGenerator := r.XGenerator
-		if xGenerator == nil {
-			xGenerator = NowXGenerator
-		}
-
-		dataRow.X = xGenerator(dataRow.Ys)
+		// Use Micro because we want to preserve the timestamp to at least millisecond
+		// accuracy. using time.Now().Unix() will truncate.
+		dataRow.X = float64(time.Now().UnixMicro()) / 1000000.0
 	}
 
 	return dataRow, nil

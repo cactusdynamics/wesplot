@@ -4,19 +4,18 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"runtime/trace"
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"github.com/sirupsen/logrus"
 )
 
 type DataBroadcaster struct {
 	// The data row reader to be read from.
 	input DataRowReader
 
-	teeMode bool
+	teeOutput io.Writer
 
 	mutex sync.Mutex
 	wg    sync.WaitGroup
@@ -39,20 +38,20 @@ type DataBroadcaster struct {
 	// Just for tracking how many rows are emitted when EOF is encountered.
 	numDataRowsEmitted int
 
-	logger logrus.FieldLogger
+	logger *slog.Logger
 }
 
-func NewDataBroadcaster(input DataRowReader, bufferCapacity int, teeMode bool) *DataBroadcaster {
+func NewDataBroadcaster(input DataRowReader, bufferCapacity int, teeOutput io.Writer) *DataBroadcaster {
 	return &DataBroadcaster{
 		input: input,
 
-		teeMode: teeMode,
+		teeOutput: teeOutput,
 
 		mutex:                 sync.Mutex{},
 		channelsForLiveUpdate: make([]chan<- DataRow, 0),
 		dataBuffer:            NewRing[DataRow](bufferCapacity),
 		numDataRowsEmitted:    0,
-		logger:                logrus.WithField("tag", "DataBroadcaster"),
+		logger:                slog.Default().With("tag", "DataBroadcaster"),
 	}
 }
 
@@ -80,7 +79,11 @@ func (d *DataBroadcaster) Start(ctx context.Context) {
 			streamErr:   err,
 		})
 
-		d.logger.WithField("numDataRowsEmitted", d.numDataRowsEmitted).WithError(err).Info("data broadcaster stream ended")
+		logger := d.logger.With("numDataRowsEmitted", d.numDataRowsEmitted)
+		if err != nil {
+			logger = logger.With("error", err)
+		}
+		logger.Info("data broadcaster stream ended")
 	}()
 }
 
@@ -137,10 +140,10 @@ func (d *DataBroadcaster) RegisterChannel(ctx context.Context, c chan<- DataRow)
 	// Not tracing this because it should be insignificant in terms of time taken
 	d.channelsForLiveUpdate = append(d.channelsForLiveUpdate, c)
 
-	d.logger.WithFields(logrus.Fields{
-		"newChannel": c,
-		"channels":   d.channelsForLiveUpdate,
-	}).Info("registered channel")
+	d.logger.With(
+		"newChannel", c,
+		"channels", d.channelsForLiveUpdate,
+	).Info("registered channel")
 }
 
 // Deregister a channel to get data updates. Called when a websocket client
@@ -162,10 +165,10 @@ func (d *DataBroadcaster) DeregisterChannel(ctx context.Context, c chan<- DataRo
 	d.channelsForLiveUpdate = Filter(d.channelsForLiveUpdate, func(channel chan<- DataRow) bool {
 		return channel != c
 	})
-	d.logger.WithFields(logrus.Fields{
-		"removedChannel": c,
-		"channels":       d.channelsForLiveUpdate,
-	}).Info("deregistered channel")
+	d.logger.With(
+		"removedChannel", c,
+		"channels", d.channelsForLiveUpdate,
+	).Info("deregistered channel")
 }
 
 func (d *DataBroadcaster) run(ctx context.Context) error {
@@ -193,7 +196,7 @@ func (d *DataBroadcaster) run(ctx context.Context) error {
 			return err
 		}
 
-		if d.teeMode {
+		if d.teeOutput != nil {
 			// Kind of inefficient, but probably OK.
 			dataLine := make([]string, 0, len(dataRow.Ys)+1)
 			dataLine = append(dataLine, fmt.Sprintf("%f", dataRow.X))
@@ -202,7 +205,7 @@ func (d *DataBroadcaster) run(ctx context.Context) error {
 				dataLine = append(dataLine, fmt.Sprintf("%f", y))
 			}
 
-			fmt.Println(strings.Join(dataLine, ","))
+			fmt.Fprintln(d.teeOutput, strings.Join(dataLine, ","))
 		}
 
 		d.cacheAndBroadcastData(traceCtx, dataRow)
@@ -216,10 +219,10 @@ func (d *DataBroadcaster) cacheAndBroadcastData(traceCtx context.Context, dataRo
 	trace.WithRegion(traceCtx, "Lock", d.mutex.Lock)
 	defer d.mutex.Unlock()
 
-	d.logger.WithFields(logrus.Fields{
-		"x":  dataRow.X,
-		"ys": dataRow.Ys,
-	}).Debug("new data row")
+	d.logger.With(
+		"x", dataRow.X,
+		"ys", dataRow.Ys,
+	).Debug("new data row")
 
 	trace.WithRegion(traceCtx, "Cache", func() {
 		d.dataBuffer.Push(dataRow)
