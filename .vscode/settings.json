@@ -1,0 +1,26 @@
+{
+  "chat.customAgentInSubagent.enabled": true,
+  "chat.agent.maxRequests": 300,
+  "chat.tools.terminal.autoApprove": {
+    "/^make test/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^go test/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^gofmt/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^make lint$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^make prod$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+  }
+}

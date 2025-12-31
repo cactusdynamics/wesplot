@@ -184,7 +184,7 @@ Use the `--tindex` flag, and specify the column number for the timestamps.
 
 ### How can I plot data from a CSV or TSV file?
 
-You can pipe a CSV or TSV file directy into wesplot like this: 
+You can pipe a CSV or TSV file directy into wesplot like this:
 
 ```console
 cat my_data.csv | wesplot
@@ -203,8 +203,8 @@ Development setup
 
 - Make sure you have Python 3 installed.
 - Make sure you install [Go](https://go.dev/).
-- Make sure you install [nodejs](https://nodejs.org/en) and [yarn classic](https://classic.yarnpkg.com/en/docs/install) (for now).
-- `cd frontend; yarn` to install the frontend dependencies.
+- Make sure you install [nodejs](https://nodejs.org/en) (includes `npm`).
+- `cd frontend; npm install` to install the frontend dependencies.
 - Run `make backend-dev` which will start a development build of wesplot and it will plot a single signal (CPU usage from `sar`).
 - In a separate terminal, Run `make frontend-dev` which will start the front end development server.
 - Go to http://localhost:5273 to see the frontend.

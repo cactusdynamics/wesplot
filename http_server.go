@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 )
@@ -17,8 +17,8 @@ import (
 const bufferSize = 10000
 
 type StreamEndedMessage struct {
-	StreamEnded bool
-	StreamError error
+	StreamEnded bool   `json:"StreamEnded"`
+	StreamError string `json:"StreamError"`
 }
 
 type HttpServer struct {
@@ -28,7 +28,7 @@ type HttpServer struct {
 	metadata        Metadata
 	flushInterval   time.Duration
 	mux             *http.ServeMux
-	logger          logrus.FieldLogger
+	logger          *slog.Logger
 }
 
 func NewHttpServer(dataBroadcaster *DataBroadcaster, host string, port uint16, metadata Metadata, flushInterval time.Duration) *HttpServer {
@@ -40,7 +40,7 @@ func NewHttpServer(dataBroadcaster *DataBroadcaster, host string, port uint16, m
 		metadata:        metadata,
 		flushInterval:   flushInterval,
 		mux:             http.NewServeMux(),
-		logger:          logrus.WithField("tag", "HttpServer"),
+		logger:          slog.Default().With("tag", "HttpServer"),
 	}
 
 	subFS, err := fs.Sub(webuiFiles, "webui")
@@ -62,7 +62,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 		OriginPatterns: []string{"*"},
 	})
 	if err != nil {
-		s.logger.WithError(err).Warn("failed to accept new websocket connection")
+		s.logger.With("error", err).Warn("failed to accept new websocket connection")
 		return
 	}
 
@@ -93,7 +93,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 			return nil
 		}
 
-		logger := s.logger.WithField("channel", channel)
+		logger := s.logger.With("channel", channel)
 
 		for {
 			select {
@@ -124,7 +124,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 
 				dataBuffer = append(dataBuffer, dataRow)
 				if len(dataBuffer) >= bufferItemCapacity || time.Since(lastSendTime) > s.flushInterval {
-					logger.WithField("buflen", len(dataBuffer)).Debug("buffer capacity reached, flushing")
+					logger.With("buflen", len(dataBuffer)).Debug("buffer capacity reached, flushing")
 					err := flushBufferToWebsocket()
 					if err != nil {
 						// At this point the websocket closed, so we don't even need to send anything
@@ -135,7 +135,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 
 			case <-time.After(s.flushInterval):
 				if len(dataBuffer) > 0 {
-					logger.WithField("buflen", len(dataBuffer)).Debug("timed out waiting for more data, flushing")
+					logger.With("buflen", len(dataBuffer)).Debug("timed out waiting for more data, flushing")
 					err := flushBufferToWebsocket()
 					if err != nil {
 						// At this point the websocket closed, so we don't even need to send anything
@@ -185,7 +185,11 @@ func (s *HttpServer) handleErrors(w http.ResponseWriter, req *http.Request) {
 	var streamEndedMessage StreamEndedMessage
 	if streamEnded {
 		streamEndedMessage.StreamEnded = true
-		streamEndedMessage.StreamError = s.dataBroadcaster.err
+		if s.dataBroadcaster.err != nil {
+			streamEndedMessage.StreamError = s.dataBroadcaster.err.Error()
+		} else {
+			streamEndedMessage.StreamError = ""
+		}
 	}
 
 	err := json.NewEncoder(w).Encode(streamEndedMessage)
@@ -214,7 +218,12 @@ func (s *HttpServer) Run() error {
 			// Really should try to distinguish which error is an address bind error.
 			// However not sure how to do this in a cross platform manner.
 			// TODO: fix me.
-			s.logger.WithError(err).Warnf("failed to listen on %s, trying %s:%d instead", addr, s.host, s.port)
+			s.logger.With(
+				"error", err,
+				"addr", addr,
+				"nextHost", s.host,
+				"nextPort", s.port,
+			).Warn("failed to listen on address, trying next port")
 		} else {
 			break
 		}
@@ -230,7 +239,7 @@ func (s *HttpServer) Run() error {
 			panic(fmt.Sprintf("cannot get network interfaces: %v", err))
 		}
 
-		logrus.Info("Plot is accessible at all IP addresses (IPv4 shown below):")
+		slog.Info("Plot is accessible at all IP addresses (IPv4 shown below)")
 		for _, iface := range ifaces {
 			addrs, err := iface.Addrs()
 			if err != nil {
@@ -247,13 +256,13 @@ func (s *HttpServer) Run() error {
 
 				ipv4 := ip.To4()
 				if ipv4 != nil {
-					logrus.Infof("  - http://%s:%d", ipv4, s.port)
+					slog.Info("http endpoint", "url", fmt.Sprintf("http://%s:%d", ipv4, s.port))
 				}
 			}
 
 		}
 	} else {
-		logrus.Info("Plot is accessible at: %s", url)
+		slog.Info("Plot is accessible", "url", url)
 	}
 
 	server := http.Server{Addr: addr, Handler: s.mux}

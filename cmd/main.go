@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 	"time"
 
 	"github.com/cactusdynamics/wesplot"
 	"github.com/jessevdk/go-flags"
-	"github.com/sirupsen/logrus"
 )
 
 var options struct {
@@ -39,6 +40,16 @@ var options struct {
 	xIsTimestamp bool
 }
 
+func configureLogger(verbose bool) {
+	level := slog.LevelInfo
+	if verbose {
+		level = slog.LevelDebug
+	}
+
+	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})
+	slog.SetDefault(slog.New(handler))
+}
+
 func parseOptions() {
 	_, err := flags.ParseArgs(&options, os.Args)
 	if err != nil {
@@ -47,6 +58,8 @@ func parseOptions() {
 		}
 		panic(err)
 	}
+
+	configureLogger(options.Verbose)
 
 	if options.NumColumns > 0 {
 		if len(options.Columns) == 0 {
@@ -59,7 +72,7 @@ func parseOptions() {
 			// The user specifies both. This is redundant and unnecessary (and could
 			// be conflicting if len(columns) != num-columns), so we just the
 			// --columns is the source of truth.
-			logrus.Warn("both --columns and --num-columns are specified. --num-columns is thus ignored.")
+			slog.Warn("both --columns and --num-columns are specified; --num-columns is ignored")
 		}
 	} else {
 		if len(options.Columns) == 0 {
@@ -72,7 +85,7 @@ func parseOptions() {
 
 	if options.YMin != nil && options.YMax != nil {
 		if *options.YMin >= *options.YMax {
-			logrus.Errorf("YMax (%f) must be greater than YMin (%f)", *options.YMax, *options.YMin)
+			slog.Error("YMax must be greater than YMin", "ymax", *options.YMax, "ymin", *options.YMin)
 			os.Exit(1)
 		}
 	}
@@ -80,7 +93,7 @@ func parseOptions() {
 	// TODO: this code is kind of funky but OK.
 	if options.XIndex != -1 {
 		if options.TIndex != -1 {
-			logrus.Error("both --xindex and --tindex is specified and this is mutually exclusive")
+			slog.Error("both --xindex and --tindex are specified and are mutually exclusive")
 			os.Exit(1)
 		}
 
@@ -93,9 +106,8 @@ func parseOptions() {
 	}
 
 	if options.Verbose {
-		logrus.SetLevel(logrus.DebugLevel)
-		logrus.Debug("logging verbose output")
-		logrus.Debug("options:")
+		slog.Debug("logging verbose output")
+		slog.Debug("options")
 		data, err := json.MarshalIndent(options, "", "  ")
 		if err != nil {
 			panic(err)
@@ -108,7 +120,7 @@ func parseOptions() {
 func main() {
 	parseOptions()
 
-	logrus.Infof("starting wesplot %v", wesplot.Version)
+	slog.Info("starting wesplot", "version", wesplot.Version)
 
 	metadata := wesplot.Metadata{
 		WindowSize:    options.WindowSize,
@@ -134,7 +146,12 @@ func main() {
 		ExpectExactColumnCount: true, // Not sure how to deal with dynamic columns so for now we need exact column count
 	}
 
-	dataBroadcaster := wesplot.NewDataBroadcaster(dataRowReader, options.WindowSize, options.Tee)
+	var teeOutput io.Writer
+	if options.Tee {
+		teeOutput = os.Stdout
+	}
+
+	dataBroadcaster := wesplot.NewDataBroadcaster(dataRowReader, options.WindowSize, teeOutput)
 	server := wesplot.NewHttpServer(dataBroadcaster, options.Host, options.Port, metadata, options.FlushInterval)
 
 	dataBroadcaster.Start(context.Background())

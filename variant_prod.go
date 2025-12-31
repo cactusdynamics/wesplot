@@ -4,10 +4,9 @@ package wesplot
 
 import (
 	"embed"
+	"log/slog"
 	"os/exec"
 	"runtime"
-
-	"github.com/sirupsen/logrus"
 )
 
 //go:embed webui
@@ -29,6 +28,6 @@ func openBrowser(url string) {
 	args = append(args, url)
 	err := exec.Command(cmd, args...).Start()
 	if err != nil {
-		logrus.Warn("failed to start web browser automatically")
+		slog.Warn("failed to start web browser automatically")
 	}
 }

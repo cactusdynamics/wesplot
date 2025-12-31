@@ -1,0 +1,46 @@
+when:
+  - event:
+    - push
+
+steps:
+  - name: test
+    image: golang:1.25
+    commands:
+      - go install golang.org/x/tools/gopls@latest
+      - make lint
+      - make backend-test COVERAGE=1
+
+  - name: build-frontend
+    image: node:24
+    commands:
+      - cd frontend && npm install && cd ..
+      - make frontend-prod
+
+  - name: build-backend
+    image: golang:1.25
+    depends_on:
+      - test
+      - build-frontend
+    commands:
+      - make prod-all
+
+  - name: upload
+    image: woodpeckerci/plugin-s3
+    depends_on:
+      - build-backend
+    when:
+      - event: push
+        branch: main
+    settings:
+      endpoint:
+        from_secret: s3_endpoint
+      bucket:
+        from_secret: s3_bucket
+      access_key:
+        from_secret: s3_access_key
+      secret_key:
+        from_secret: s3_secret_key
+      source: build/**/*
+      target: /wesplot/releases/${CI_PIPELINE_NUMBER}
+      strip_prefix: build/
+      compress: true

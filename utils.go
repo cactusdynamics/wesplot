@@ -2,6 +2,7 @@ package wesplot
 
 import (
 	"container/ring"
+	"fmt"
 
 	"golang.org/x/exp/constraints"
 )
@@ -68,6 +69,10 @@ type ThreadUnsafeRing[T any] struct {
 }
 
 func NewRing[T any](capacity int) *ThreadUnsafeRing[T] {
+	if capacity <= 0 {
+		panic(fmt.Sprintf("ring does not support 0 or negative capacity: %d", capacity))
+	}
+
 	return &ThreadUnsafeRing[T]{
 		capacity: capacity,
 		ring:     ring.New(capacity),
