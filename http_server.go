@@ -15,6 +15,7 @@ import (
 )
 
 const bufferSize = 10000
+const maxBufferItemCapacity = 25000
 
 type StreamEndedMessage struct {
 	StreamEnded bool   `json:"StreamEnded"`
@@ -50,6 +51,7 @@ func NewHttpServer(dataBroadcaster *DataBroadcaster, host string, port uint16, m
 
 	s.mux.Handle("/", http.FileServer(http.FS(subFS)))
 	s.mux.HandleFunc("/ws", s.handleWebSocket)
+	s.mux.HandleFunc("/ws2", s.handleWebSocket2)
 	s.mux.HandleFunc("/metadata", s.handleMetadata)
 	s.mux.HandleFunc("/errors", s.handleErrors)
 
@@ -78,7 +80,7 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 
 		// We buffer data for at least X milliseconds or if it reaches capacity before sending it to the client.
 		// Note: tune or allow configuration
-		bufferItemCapacity := Min(s.metadata.WindowSize, 25000)
+		bufferItemCapacity := Min(s.metadata.WindowSize, maxBufferItemCapacity)
 		lastSendTime := time.Now()
 		dataBuffer := make([]DataRow, 0, bufferItemCapacity)
 
@@ -158,6 +160,200 @@ func (s *HttpServer) handleWebSocket(w http.ResponseWriter, req *http.Request) {
 
 	// Once the websocket writing thread finishes, we want to deregister the
 	// channel from the broadcaster.
+	wg.Wait()
+	s.dataBroadcaster.DeregisterChannel(ctx, channel)
+	close(channel)
+}
+
+func (s *HttpServer) handleWebSocket2(w http.ResponseWriter, req *http.Request) {
+	// Accept websocket connection with binary frame support
+	c, err := websocket.Accept(w, req, &websocket.AcceptOptions{
+		OriginPatterns: []string{"*"},
+	})
+	if err != nil {
+		s.logger.With("error", err).Warn("failed to accept new websocket connection")
+		return
+	}
+
+	ctx := req.Context()
+	ctx = c.CloseRead(ctx) // This means we no longer want to read from the websocket
+
+	channel := make(chan DataRow, bufferSize)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	go func() {
+		defer wg.Done()
+
+		logger := s.logger.With("channel", channel, "endpoint", "/ws2")
+
+		// Send metadata message immediately on connection
+		metadataMsg := WSMessage{
+			Header: EnvelopeHeader{
+				Version: ProtocolVersion,
+				Type:    MessageTypeMetadata,
+			},
+			Payload: s.metadata,
+		}
+
+		metadataBytes, err := EncodeWSMessage(metadataMsg)
+		if err != nil {
+			logger.With("error", err).Error("failed to encode metadata message")
+			c.Close(websocket.StatusInternalError, "metadata encoding failed")
+			return
+		}
+
+		err = c.Write(ctx, websocket.MessageBinary, metadataBytes)
+		if err != nil {
+			logger.With("error", err).Warn("failed to send metadata message")
+			return
+		}
+
+		// Buffer data for at least X milliseconds or if it reaches capacity before sending
+		bufferItemCapacity := Min(s.metadata.WindowSize, maxBufferItemCapacity)
+
+		// Pre-allocate X/Y buffers for each series to avoid reallocation
+		numSeries := len(s.metadata.WesplotOptions.Columns)
+		xBuffers := make(map[int][]float64, numSeries)
+		yBuffers := make(map[int][]float64, numSeries)
+		lastSendTimes := make(map[int]time.Time)
+		now := time.Now()
+		for i := 0; i < numSeries; i++ {
+			xBuffers[i] = make([]float64, 0, bufferItemCapacity)
+			yBuffers[i] = make([]float64, 0, bufferItemCapacity)
+			lastSendTimes[i] = now
+		}
+
+		// flushSeries flushes a single series
+		flushSeries := func(seriesID int) error {
+			if len(xBuffers[seriesID]) == 0 {
+				return nil
+			}
+
+			dataMsg := DataMessage{
+				SeriesID: uint32(seriesID),
+				Length:   uint32(len(xBuffers[seriesID])),
+				X:        xBuffers[seriesID],
+				Y:        yBuffers[seriesID],
+			}
+
+			wsMsg := WSMessage{
+				Header: EnvelopeHeader{
+					Version: ProtocolVersion,
+					Type:    MessageTypeData,
+				},
+				Payload: dataMsg,
+			}
+
+			dataBytes, err := EncodeWSMessage(wsMsg)
+			if err != nil {
+				return fmt.Errorf("failed to encode data message for series %d: %w", seriesID, err)
+			}
+
+			err = c.Write(ctx, websocket.MessageBinary, dataBytes)
+			if err != nil {
+				return fmt.Errorf("failed to write data message for series %d: %w", seriesID, err)
+			}
+
+			// Clear buffer by resetting length (reuse capacity)
+			xBuffers[seriesID] = xBuffers[seriesID][:0]
+			yBuffers[seriesID] = yBuffers[seriesID][:0]
+			lastSendTimes[seriesID] = time.Now()
+			return nil
+		}
+
+		for {
+			select {
+			case dataRow, open := <-channel:
+				if !open {
+					logger.Warn("data channel closed, closing websocket")
+					c.Close(websocket.StatusNormalClosure, "channel closed")
+					return
+				}
+
+				if dataRow.streamEnded {
+					// Stream has ended. Flush buffered data first, then send stream end message
+					logger.Info("stream ended, flushing and then closing websocket connection")
+
+					for seriesID := 0; seriesID < numSeries; seriesID++ {
+						if err := flushSeries(seriesID); err != nil {
+							logger.With("error", err).Warn("websocket flush failed")
+							return
+						}
+					}
+
+					// Send stream end envelope
+					streamEndMsg := StreamEndMessage{
+						Error: dataRow.streamErr != nil,
+						Msg:   "",
+					}
+					if dataRow.streamErr != nil {
+						streamEndMsg.Msg = dataRow.streamErr.Error()
+					}
+
+					wsMsg := WSMessage{
+						Header: EnvelopeHeader{
+							Version: ProtocolVersion,
+							Type:    MessageTypeStreamEnd,
+						},
+						Payload: streamEndMsg,
+					}
+
+					streamEndBytes, err := EncodeWSMessage(wsMsg)
+					if err != nil {
+						logger.With("error", err).Error("failed to encode stream end message")
+					} else {
+						err = c.Write(ctx, websocket.MessageBinary, streamEndBytes)
+						if err != nil {
+							logger.With("error", err).Warn("failed to send stream end message")
+						}
+					}
+
+					c.Close(websocket.StatusNormalClosure, "")
+					return
+				}
+
+				// Immediately transform DataRow into X/Y arrays for each series
+				for seriesID := 0; seriesID < numSeries; seriesID++ {
+					xBuffers[seriesID] = append(xBuffers[seriesID], dataRow.X)
+					yBuffers[seriesID] = append(yBuffers[seriesID], dataRow.Ys[seriesID])
+
+					// Flush this series if it reaches capacity or timeout
+					if len(xBuffers[seriesID]) >= bufferItemCapacity || time.Since(lastSendTimes[seriesID]) > s.flushInterval {
+						logger.With("seriesID", seriesID, "buflen", len(xBuffers[seriesID])).Debug("series buffer capacity reached, flushing")
+						err := flushSeries(seriesID)
+						if err != nil {
+							logger.With("error", err, "seriesID", seriesID).Warn("websocket write failed and closed")
+							return
+						}
+					}
+				}
+
+			case <-time.After(s.flushInterval):
+				// Check each series independently for timeout flush
+				for seriesID := 0; seriesID < numSeries; seriesID++ {
+					if len(xBuffers[seriesID]) > 0 && time.Since(lastSendTimes[seriesID]) > s.flushInterval {
+						logger.With("seriesID", seriesID, "buflen", len(xBuffers[seriesID])).Debug("timed out waiting for more data, flushing series")
+						err := flushSeries(seriesID)
+						if err != nil {
+							logger.With("error", err, "seriesID", seriesID).Warn("websocket write failed and closed")
+							return
+						}
+					}
+				}
+
+			case <-ctx.Done():
+				logger.Info("client closed connection or context canceled")
+				c.Close(websocket.StatusNormalClosure, "")
+				return
+			}
+		}
+	}()
+
+	// Register the channel with the broadcaster
+	s.dataBroadcaster.RegisterChannel(ctx, channel)
+
+	// Once the websocket writing thread finishes, deregister the channel
 	wg.Wait()
 	s.dataBroadcaster.DeregisterChannel(ctx, channel)
 	close(channel)
