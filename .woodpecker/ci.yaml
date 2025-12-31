@@ -23,6 +23,7 @@ steps:
       - build-frontend
     commands:
       - make prod-all
+      - gzip build/wesplot-* # https://codeberg.org/woodpecker-plugins/plugin-s3/issues/328
 
   - name: upload
     image: woodpeckerci/plugin-s3
@@ -43,4 +44,3 @@ steps:
       source: build/**/*
       target: /wesplot/releases/${CI_PIPELINE_NUMBER}
       strip_prefix: build/
-      compress: true

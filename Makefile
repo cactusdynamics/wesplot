@@ -1,4 +1,4 @@
-.PHONY: backend-lint lint backend-test test frontend-dev backend-dev prod prod-all frontend-prod
+.PHONY: clean backend-lint lint backend-test test frontend-dev backend-dev prod prod-all frontend-prod
 
 DIRTY_TREE := $(shell git diff-index --quiet HEAD -- || echo '+dirty')
 COMMIT     := $(addsuffix $(DIRTY_TREE),$(shell git rev-parse --short HEAD))
@@ -8,6 +8,9 @@ VERSION    := 1.0.0-rc1+$(COMMIT)
 COVERAGE_FILE := build/backend-coverage.out
 
 BUILD_FLAGS := -tags prod -ldflags "-X github.com/cactusdynamics/wesplot.Version=$(VERSION)"
+
+clean:
+	rm -rf build webui frontend/dist
 
 backend-lint:
 	go vet ./...
@@ -37,7 +40,6 @@ prod: frontend-prod
 	CGO_ENABLED=0 go build $(BUILD_FLAGS) -o build/wesplot ./cmd
 
 prod-all:
-	@rm -rf build
 	@mkdir -p build
 	export GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
 	export GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
