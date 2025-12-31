@@ -26,7 +26,7 @@ test: backend-test
 
 backend-dev:
 	# Not the best for now but whatever
-	python3 scripts/fake_data.py | go run cmd/main.go
+	python3 scripts/fake_data.py | go run cmd/wesplot/main.go
 
 frontend-dev:
 	cd frontend && npm run dev -- --host 0.0.0.0 --port 5273
@@ -37,14 +37,14 @@ frontend-prod:
 	cp -ar frontend/dist webui
 
 prod: frontend-prod
-	CGO_ENABLED=0 go build $(BUILD_FLAGS) -o build/wesplot ./cmd
+	CGO_ENABLED=0 go build $(BUILD_FLAGS) -o build/wesplot ./cmd/wesplot
 
 prod-all:
 	@mkdir -p build
-	export GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
-	export GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
-	export GOOS=linux GOARCH=amd64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
-	export GOOS=linux GOARCH=arm64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
-	export GOOS=windows GOARCH=amd64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd
+	export GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd/wesplot
+	export GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd/wesplot
+	export GOOS=linux GOARCH=amd64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd/wesplot
+	export GOOS=linux GOARCH=arm64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd/wesplot
+	export GOOS=windows GOARCH=amd64 CGO_ENABLED=0 && go build $(BUILD_FLAGS) -o build/wesplot-$$GOOS-$$GOARCH-$(VERSION) ./cmd/wesplot
 	cd build && sha256sum * | tee sha256sums
 	ls -lh build
