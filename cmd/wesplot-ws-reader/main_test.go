@@ -122,17 +122,25 @@ func TestWSReaderBasicData(t *testing.T) {
 	}
 
 	// Check that expected rows are present (order might vary due to concurrency)
+	expectedSeen := make(map[string]bool, len(expectedRows))
 	for _, expectedRow := range expectedRows {
-		found := false
-		for _, dataLine := range dataLines {
-			if dataLine == expectedRow {
-				found = true
-				break
-			}
+		expectedSeen[expectedRow] = false
+	}
+
+	for _, dataLine := range dataLines {
+		if _, ok := expectedSeen[dataLine]; ok {
+			expectedSeen[dataLine] = true
 		}
-		if !found {
-			t.Errorf("Expected row %q not found in output", expectedRow)
+	}
+
+	var missing []string
+	for row, seen := range expectedSeen {
+		if !seen {
+			missing = append(missing, row)
 		}
+	}
+	if len(missing) > 0 {
+		t.Errorf("Expected rows not found in output: %s", strings.Join(missing, ", "))
 	}
 }
 
