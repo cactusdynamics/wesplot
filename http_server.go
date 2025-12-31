@@ -332,13 +332,11 @@ func (s *HttpServer) handleWebSocket2(w http.ResponseWriter, req *http.Request) 
 			case <-time.After(s.flushInterval):
 				// Check each series independently for timeout flush
 				for seriesID := 0; seriesID < numSeries; seriesID++ {
-					if len(xBuffers[seriesID]) > 0 && time.Since(lastSendTimes[seriesID]) > s.flushInterval {
-						logger.With("seriesID", seriesID, "buflen", len(xBuffers[seriesID])).Debug("timed out waiting for more data, flushing series")
-						err := flushSeries(seriesID)
-						if err != nil {
-							logger.With("error", err, "seriesID", seriesID).Warn("websocket write failed and closed")
-							return
-						}
+					logger.With("seriesID", seriesID, "buflen", len(xBuffers[seriesID])).Debug("timed out waiting for more data, flushing series")
+					err := flushSeries(seriesID)
+					if err != nil {
+						logger.With("error", err, "seriesID", seriesID).Warn("websocket write failed and closed")
+						return
 					}
 				}
 

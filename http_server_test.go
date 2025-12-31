@@ -16,11 +16,13 @@ import (
 	"nhooyr.io/websocket/wsjson"
 )
 
-func startTestServer(metadata Metadata, broadcaster *DataBroadcaster) (string, func()) {
+const defaultFlushInterval = 10 * time.Millisecond
+
+func startTestServer(metadata Metadata, broadcaster *DataBroadcaster, flushInterval time.Duration) (string, func()) {
 	// Use NewHttpServer to ensure the same handler registration and behavior
 	// as production code. We deliberately do not call `Run()` to avoid
 	// side-effects such as opening a browser or binding to a specific port.
-	s := NewHttpServer(broadcaster, "127.0.0.1", 0, metadata, 10*time.Millisecond)
+	s := NewHttpServer(broadcaster, "127.0.0.1", 0, metadata, flushInterval)
 
 	srv := httptest.NewServer(s.mux)
 
@@ -153,7 +155,7 @@ func TestHTTPServer_Metadata(t *testing.T) {
 			},
 		}
 
-		baseURL, cleanup := startTestServer(expected, nil)
+		baseURL, cleanup := startTestServer(expected, nil, defaultFlushInterval)
 		defer cleanup()
 
 		got, resp, err := fetchMetadata(baseURL)
@@ -189,7 +191,7 @@ func TestHTTPServer_Metadata(t *testing.T) {
 
 	// Subtest: CORS headers on metadata
 	t.Run("CORSHeaders", func(t *testing.T) {
-		baseURL, cleanup := startTestServer(Metadata{}, nil)
+		baseURL, cleanup := startTestServer(Metadata{}, nil, defaultFlushInterval)
 		defer cleanup()
 
 		resp, err := http.Get(baseURL + "/metadata")
@@ -231,7 +233,7 @@ func TestHTTPServer_Metadata(t *testing.T) {
 			},
 		}
 
-		baseURL, cleanup := startTestServer(expected, nil)
+		baseURL, cleanup := startTestServer(expected, nil, defaultFlushInterval)
 		defer cleanup()
 
 		got, resp, err := fetchMetadata(baseURL)
@@ -269,7 +271,7 @@ func TestHTTPServer_Metadata(t *testing.T) {
 			},
 		}
 
-		baseURL, cleanup := startTestServer(expected, nil)
+		baseURL, cleanup := startTestServer(expected, nil, defaultFlushInterval)
 		defer cleanup()
 
 		got, resp, err := fetchMetadata(baseURL)
@@ -298,7 +300,7 @@ func TestHTTPServer_Errors(t *testing.T) {
 		d.Start(ctx)
 		d.Wait()
 
-		baseURL, cleanup := startTestServer(Metadata{}, d)
+		baseURL, cleanup := startTestServer(Metadata{}, d, defaultFlushInterval)
 		defer cleanup()
 
 		res, resp, err := fetchErrors(baseURL)
@@ -328,7 +330,7 @@ func TestHTTPServer_Errors(t *testing.T) {
 		d := NewDataBroadcaster(br, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(Metadata{}, d)
+		baseURL, cleanup := startTestServer(Metadata{}, d, defaultFlushInterval)
 
 		// Do NOT finish the reader yet; the broadcaster should be running and not ended.
 		res, resp, err := fetchErrors(baseURL)
@@ -363,7 +365,7 @@ func TestHTTPServer_Errors(t *testing.T) {
 		d.Start(ctx)
 		d.Wait()
 
-		baseURL, cleanup := startTestServer(Metadata{}, d)
+		baseURL, cleanup := startTestServer(Metadata{}, d, defaultFlushInterval)
 		defer cleanup()
 
 		res, resp, err := fetchErrors(baseURL)
@@ -394,7 +396,7 @@ func TestHTTPServer_Errors(t *testing.T) {
 	t.Run("CORSHeaders", func(t *testing.T) {
 		// Use a non-nil broadcaster (not started) so handler can access it safely.
 		d := NewDataBroadcaster(newTestReaderFromRows([]DataRow{}, 0), 10, nil)
-		baseURL, cleanup := startTestServer(Metadata{}, d)
+		baseURL, cleanup := startTestServer(Metadata{}, d, defaultFlushInterval)
 		defer cleanup()
 
 		resp, err := http.Get(baseURL + "/errors")
@@ -435,7 +437,7 @@ func TestHTTPServer_WebSocket(t *testing.T) {
 		d := NewDataBroadcaster(br, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(Metadata{WindowSize: 10}, d)
+		baseURL, cleanup := startTestServer(Metadata{WindowSize: 10}, d, defaultFlushInterval)
 		defer cleanup()
 
 		c, closeConn, err := dialWebSocket(baseURL)
@@ -486,7 +488,7 @@ func TestHTTPServer_WebSocket(t *testing.T) {
 		d := NewDataBroadcaster(br, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(Metadata{WindowSize: 10}, d)
+		baseURL, cleanup := startTestServer(Metadata{WindowSize: 10}, d, defaultFlushInterval)
 		defer cleanup()
 
 		c1, closeC1, err := dialWebSocket(baseURL)
@@ -664,7 +666,7 @@ func TestHTTPServer_WS2_MetadataMessage(t *testing.T) {
 		d := NewDataBroadcaster(r, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(metadata, d)
+		baseURL, cleanup := startTestServer(metadata, d, defaultFlushInterval)
 		defer cleanup()
 
 		c, closeConn, err := dialWebSocket2(baseURL)
@@ -719,7 +721,7 @@ func TestHTTPServer_WS2_DataMessage(t *testing.T) {
 		d := NewDataBroadcaster(br, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(metadata, d)
+		baseURL, cleanup := startTestServer(metadata, d, defaultFlushInterval)
 		defer cleanup()
 
 		c, closeConn, err := dialWebSocket2(baseURL)
@@ -798,7 +800,7 @@ func TestHTTPServer_WS2_DataMessage(t *testing.T) {
 		d := NewDataBroadcaster(br, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(metadata, d)
+		baseURL, cleanup := startTestServer(metadata, d, defaultFlushInterval)
 		defer cleanup()
 
 		c, closeConn, err := dialWebSocket2(baseURL)
@@ -921,7 +923,7 @@ func TestHTTPServer_WS2_DataMessage(t *testing.T) {
 		d := NewDataBroadcaster(r, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(metadata, d)
+		baseURL, cleanup := startTestServer(metadata, d, defaultFlushInterval)
 		defer cleanup()
 
 		c, closeConn, err := dialWebSocket2(baseURL)
@@ -980,7 +982,7 @@ func TestHTTPServer_WS2_StreamEnd(t *testing.T) {
 		d := NewDataBroadcaster(r, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(metadata, d)
+		baseURL, cleanup := startTestServer(metadata, d, defaultFlushInterval)
 		defer cleanup()
 
 		c, closeConn, err := dialWebSocket2(baseURL)
@@ -1051,7 +1053,7 @@ func TestHTTPServer_WS2_StreamEnd(t *testing.T) {
 		d := NewDataBroadcaster(r, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(metadata, d)
+		baseURL, cleanup := startTestServer(metadata, d, defaultFlushInterval)
 		defer cleanup()
 
 		c, closeConn, err := dialWebSocket2(baseURL)
@@ -1126,7 +1128,7 @@ func TestHTTPServer_WS2_MultipleClients(t *testing.T) {
 		d := NewDataBroadcaster(br, 10, nil)
 		d.Start(ctx)
 
-		baseURL, cleanup := startTestServer(metadata, d)
+		baseURL, cleanup := startTestServer(metadata, d, defaultFlushInterval)
 		defer cleanup()
 
 		// Connect first client
@@ -1224,5 +1226,99 @@ func TestHTTPServer_WS2_MultipleClients(t *testing.T) {
 		if dataMsg2.Length != 1 || dataMsg2.X[0] != 2.0 || dataMsg2.Y[0] != 20.0 {
 			t.Fatalf("c2 second data mismatch: got X=%v Y=%v", dataMsg2.X, dataMsg2.Y)
 		}
+	})
+}
+
+func TestHTTPServer_WS2_FlushInterval(t *testing.T) {
+	// Test that demonstrates flush interval behavior by using a very long interval
+	// and then verifying that data is eventually flushed via the timer mechanism
+	t.Run("FlushesAfterTimeout", func(t *testing.T) {
+		metadata := Metadata{
+			WindowSize: 100,
+			WesplotOptions: WesplotOptions{
+				Columns: []string{"series1"},
+			},
+		}
+
+		// Use a 50ms flush interval - long enough to test but not too long for the test
+		flushInterval := 50 * time.Millisecond
+
+		ctx := context.Background()
+		rows := []DataRow{
+			{DataRowData: DataRowData{X: 1.0, Ys: []float64{10.0}}},
+			{DataRowData: DataRowData{X: 2.0, Ys: []float64{20.0}}}, // Extra to prevent EOF
+		}
+		br := &blockingDataRowReader{rows: rows, proceed: make(chan struct{})}
+		d := NewDataBroadcaster(br, 10, nil)
+		d.Start(ctx)
+
+		baseURL, cleanup := startTestServer(metadata, d, flushInterval)
+		defer cleanup()
+
+		c, closeConn, err := dialWebSocket2(baseURL)
+		if err != nil {
+			t.Fatalf("dial websocket: %v", err)
+		}
+		defer closeConn()
+
+		// Read and ignore metadata message
+		_, err = readBinaryMessage(c, 500*time.Millisecond)
+		if err != nil {
+			t.Fatalf("read metadata: %v", err)
+		}
+
+		// Send one data point
+		br.Proceed()
+
+		// The data should be flushed eventually due to the timer mechanism
+		// Use a timeout that's longer than the flush interval
+		timeout := flushInterval * 5
+		msgBytes, err := readBinaryMessage(c, timeout)
+		if err != nil {
+			t.Fatalf("failed to receive data message within %v: %v", timeout, err)
+		}
+
+		msg, err := DecodeWSMessage(msgBytes)
+		if err != nil {
+			t.Fatalf("decode data message: %v", err)
+		}
+
+		if msg.Header.Type != MessageTypeData {
+			t.Fatalf("expected DATA message (0x01), got 0x%02x", msg.Header.Type)
+		}
+
+		dataMsg, ok := msg.Payload.(DataMessage)
+		if !ok {
+			t.Fatalf("expected DataMessage payload, got %T", msg.Payload)
+		}
+
+		if dataMsg.SeriesID != 0 {
+			t.Fatalf("expected SeriesID 0, got %d", dataMsg.SeriesID)
+		}
+
+		if dataMsg.Length != 1 {
+			t.Fatalf("expected 1 data point, got %d", dataMsg.Length)
+		}
+
+		// Verify the data values
+		expectedX := []float64{1.0}
+		expectedY := []float64{10.0}
+
+		if !reflect.DeepEqual(dataMsg.X, expectedX) {
+			t.Fatalf("X values mismatch:\nwant: %v\ngot:  %v", expectedX, dataMsg.X)
+		}
+
+		if !reflect.DeepEqual(dataMsg.Y, expectedY) {
+			t.Fatalf("Y values mismatch:\nwant: %v\ngot:  %v", expectedY, dataMsg.Y)
+		}
+
+		// Need to let all messages through to make sure the broadcaster shuts down.
+		// Otherwise it will block the http server forever and this server will
+		// never shutdown.
+		br.Proceed()
+
+		// Close the WebSocket connection before test completes
+		closeConn()
+
 	})
 }
