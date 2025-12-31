@@ -12,6 +12,7 @@ The architecture and file structure of the project is documented in [docs/develo
 - Lint the code with `make lint`
 - Run all tests: `make test`
 - Run all tests and check for code coverage: `make test COVERAGE=1`
+- Run these commands separately (not with && or ;) so they can be auto approved as auto approval relies on exact matches.
 
 ## Coding rules
 
@@ -24,7 +25,7 @@ All rules below applies unless told otherwise by user prompts.
 ### Test policy
 
 - Add sufficient test coverage for code changes. Think of all the possible edge cases and comment inline in the tests on why these cases matter.
-- Code coverage should be 100%. Check with `make test COVERAGE=1`.
+- Code coverage should be 100% (but some error paths might be near-impossible to test, so they can be skipped). Check with `make test COVERAGE=1`.
 - Unit tests should be in `<file>_test.go` as per normal Go convention.
 - Test failures should be accompanied with good error messages for debugging.
 

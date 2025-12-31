@@ -2,15 +2,15 @@
   "chat.customAgentInSubagent.enabled": true,
   "chat.agent.maxRequests": 300,
   "chat.tools.terminal.autoApprove": {
-    "/^make test/": {
+    "/^make test$/": {
       "approve": true,
       "matchCommandLine": true
     },
-    "/^go test/": {
+    "/^make test COVERAGE=1$/": {
       "approve": true,
       "matchCommandLine": true
     },
-    "/^gofmt/": {
+    "/^go test [.]\/[.][.][.]$/": {
       "approve": true,
       "matchCommandLine": true
     },
