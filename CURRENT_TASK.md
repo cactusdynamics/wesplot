@@ -67,7 +67,6 @@ This is a **major frontend rewrite** to support multi-series with independent X 
 - [ ] **Step 2:** Set up v2 frontend structure
   - [ ] Create `v2.html` as new entrypoint
   - [ ] Create `src/v2/` directory for TypeScript code
-  - [ ] Copy and adapt necessary assets (CSS, etc.) to v2
   - [ ] Set up testing/benchmark infrastructure for TypeScript and add coverage/linting commands
 
 - [ ] **Step 3:** Implement Streamer component
