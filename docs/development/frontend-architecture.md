@@ -1,10 +1,10 @@
 ## Frontend Architecture (v2)
 
-The v2 frontend (entrypoint: `v2.html`) uses the binary `/ws2` endpoint and supports multi-series with independent X values. The architecture prioritizes **simplicity, performance, and testability** with vanilla JavaScript/TypeScript.
+The v2 frontend (entrypoint: `v2.html`) uses the binary `/ws2` endpoint and supports multi-series with independent X values.
 
 ### Design Principles
 
-1. **Separation of Concerns:** Streaming logic (Streamer) is decoupled from rendering logic (Chart)
+1. **Separation of Concerns:** Data streaming (Streamer) is decoupled from rendering (Chart)
 2. **Zero-Copy Data Transfer:** Pass TypedArray references directly from binary messages to avoid copying
 3. **Callback-Based Communication:** Streamer notifies Charts via registered callbacks
 4. **Vanilla JS First:** No framework dependencies, pure TypeScript/JavaScript
@@ -14,28 +14,23 @@ The v2 frontend (entrypoint: `v2.html`) uses the binary `/ws2` endpoint and supp
 
 ```mermaid
 flowchart TD
-    A[WebSocket /ws2] --> B[Streamer]
-    B --> C[Metadata Callback]
-    B --> D[Data Callback 1]
-    B --> E[Data Callback 2]
-    B --> F[Stream End Callback]
+  A[WebSocket /ws2] --> B[Streamer]
+  B --> C["Main App (metadata handler)"]
+  B --> D["Data Callback 1"]
+  B --> E["Data Callback 2"]
+  B --> F["Main App (stream-end handler)"]
 
-    C --> G[Chart 1]
-    D --> G
-    F --> G
+  D --> G[Chart 1]
+  E --> H[Chart 2]
 
-    C --> H[Chart 2]
-    E --> H
-    F --> H
-
-    style B fill:#e1f5ff
-    style G fill:#fff4e1
-    style H fill:#fff4e1
+  style B fill:#e1f5ff
+  style G fill:#fff4e1
+  style H fill:#fff4e1
 ```
 
 ### Streamer Component
 
-**Responsibility:** Manage WebSocket connection to `/ws2`, decode binary envelope protocol, dispatch data to registered callbacks.
+**Responsibility:** Manage WebSocket connection to `/ws2`, decode binary envelope protocol (see [docs/development/ws-protocol.md](./ws-protocol.md)), dispatch data to registered callbacks.
 
 **File:** `src/v2/streamer.ts`
 
@@ -44,25 +39,41 @@ flowchart TD
 ```typescript
 interface StreamerCallbacks {
   onMetadata?: (metadata: Metadata) => void;
-  onData?: (seriesId: number, xData: Float64Array, yData: Float64Array) => void;
+  // Streamer owns per-series `CircularBuffer` instances (typed for float64).
+  // When dispatching data, the Streamer will produce an ordered array of
+  // `Float64Array` segments for X and Y respectively. In the common case
+  // the array will contain a single segment; if the circular buffer wraps
+  // two segments will be provided (end then begin). Charts must treat the
+  // segments as concatenated in order.
+  onData?: (seriesId: number, xSegments: Float64Array[], ySegments: Float64Array[]) => void;
   onStreamEnd?: (error: boolean, message: string) => void;
   onError?: (error: Error) => void;
 }
 
 class Streamer {
-  constructor(wsUrl: string);
+  constructor(wsUrl: string, windowSize: number);
 
   // Register callbacks for stream events
   registerCallbacks(callbacks: StreamerCallbacks): void;
 
+  // Unregister callbacks so they stop getting events
+  unregisterCallbacks(callbacks: StreamerCallbacks): void;
+
   // Start streaming
-  connect(): Promise<void>;
+  connect(): void;
 
   // Close connection
   disconnect(): void;
 
   // Connection state
   isConnected(): boolean;
+
+  // Internals (design): per-series buffers created at construction time
+  // xBuffers: Map<seriesId, CircularBuffer>  (Float64 backing)
+  // yBuffers: Map<seriesId, CircularBuffer>  (Float64 backing)
+  // The `CircularBuffer` abstraction encapsulates write position, read
+  // slicing, and provides zero-copy `Float64Array` segment views for
+  // dispatch (1 or 2 segments when wrapped).
 }
 ```
 
@@ -80,8 +91,10 @@ class Streamer {
 3. **Message Handling:**
    - **METADATA (0x02):** Parse JSON, invoke `onMetadata` callback
    - **DATA (0x01):** Decode SeriesID, Length, X/Y arrays
-     - Create `Float64Array` views directly over WebSocket buffer (zero-copy)
-     - Invoke `onData(seriesId, xArray, yArray)` callback
+     - If `Length == 0` (per protocol), treat this as a series break (discontinuity). To keep the hot path simple and zero-copy, the Streamer will append a sentinel `NaN` value into the X and Y buffers at the current write position and advance the write position by one.
+     - Otherwise, append incoming data into Streamer's preallocated per-series ring buffers (owned, keyed by `seriesId`). Track write position and valid length.
+     - On dispatch, construct one or more `Float64Array` views that present the valid data in logical order. If the ring buffer did not wrap, a single contiguous view is produced; if it wrapped, two views are produced (tail then head).
+     - Invoke `onData(seriesId, xSegments, ySegments)` where `xSegments` and `ySegments` are ordered arrays of `Float64Array` segments to be treated as concatenated by the consumer. The Streamer guarantees that segments are split only by buffer wrap; explicit series breaks are encoded inline as `NaN` values in the segments.
    - **STREAM_END (0x03):** Parse JSON, invoke `onStreamEnd` callback
    - **Unknown Types:** Log warning, continue processing
 
@@ -106,7 +119,9 @@ DataView (for header parsing)
   ↓
 Float64Array views over payload (zero-copy)
   ↓
-onData callback (seriesId, Float64Array, Float64Array)
+Streamer appends payload into per-series ring buffers (Map keyed by seriesId)
+  ↓
+onData callback (seriesId, Float64Array[], Float64Array[])
   ↓
 Chart component
 ```
@@ -122,17 +137,27 @@ Chart component
 ```typescript
 interface ChartConfig {
   container: HTMLElement;           // DOM element to render chart into
-  seriesIds: number[];              // Which series to display (by index)
+  seriesIds: number[];              // Which series to display (series identifiers)
   metadata: Metadata;               // Stream metadata (from onMetadata)
   windowSize?: number;              // Max points to display (rolling window)
   colors?: string[];                // Series colors
 }
 
 class Chart {
-  constructor(config: ChartConfig);
+  constructor(container: HTMLElement, config: ChartConfig);
 
-  // Append data to a series (called from Streamer onData callback)
-  appendData(seriesId: number, xData: Float64Array, yData: Float64Array): void;
+  // Update method: Streamer forwards the owned buffer segments to the
+  // chart via `update`. `update` performs a fast reference assignment of
+  // the latest segments and increments an internal generation counter.
+  // This is intentionally cheap and allocation-free on the hot path.
+  update(seriesId: number, xSegments: Float64Array[], ySegments: Float64Array[]): void;
+
+  // Render method: Called on animation frame. `render` checks the
+  // generation counter and only rebuilds Chart.js row-oriented data and
+  // calls Chart.js `update()` when the generation has changed since the
+  // last render. This batches render work and avoids redrawing on every
+  // incoming message.
+  render(): void;
 
   // Handle stream end
   handleStreamEnd(error: boolean, message: string): void;
@@ -148,20 +173,19 @@ class Chart {
 **Key Behaviors:**
 
 1. **Initialization:**
-   - Creates Chart.js instance in provided container element
-   - Configures chart based on metadata (labels, title, axis limits)
-   - Initializes data buffers for each series (using specified `seriesIds`)
+  - Creates Chart.js instance in provided container element
+  - Configures chart based on metadata (labels, title, axis limits)
+  - Initializes data buffers for each series (using specified `seriesIds`)
 
 2. **Data Management:**
-   - Maintains separate X/Y arrays for each series
-   - Supports series with **independent X values** (no shared X assumption)
-   - Implements rolling window if `windowSize` is specified
-   - **Zero-copy friendly:** Copies Float64Array data into internal buffers (unavoidable for Chart.js)
+  - Maintains separate X/Y arrays for each series
+  - Supports series with **independent X values** (no shared X assumption)
+  - Implements rolling window if `windowSize` is specified
+  - **Zero-copy friendly:** Copies Float64Array data into internal buffers (unavoidable for Chart.js)
+  - **Series breaks:** Charts must support discontinuities. The Streamer encodes explicit breaks inline by inserting `NaN` sentinel values (in both X and Y buffers) into the segments. Chart will convert this appropriately to ChartJS such that a discontinuity is shown.
 
 3. **Rendering:**
-   - Batches updates to avoid excessive redraws
-   - Uses Chart.js `update()` API efficiently
-   - Throttles updates for high-frequency data
+  - Rendering is performed on each animation frame using the latest cached data. To reduce the amount of work needed, rendering can be throttled by skipping frames as needed.
 
 4. **Multiple Series:**
    - Each Chart can display multiple series
@@ -169,26 +193,21 @@ class Chart {
    - Charts can share or partition series (e.g., Chart 1 shows series 0-1, Chart 2 shows series 2-3)
 
 5. **Lifecycle:**
-   - `appendData()`: Called by Streamer for each DATA message
-   - `handleStreamEnd()`: Called when stream ends (clean termination or error)
-   - `destroy()`: Clean up Chart.js instance and buffers
+  - `update()`: Called by Streamer (via callback) to attach the latest buffer segments to the chart and increment a generation counter (cheap, allocation-free).
+  - `render()`: Called on `requestAnimationFrame`; checks the generation counter and only performs Chart.js data conversion and drawing when the generation changed since the last render.
+  - `handleStreamEnd()`: Called when stream ends (clean termination or error)
+  - `destroy()`: Clean up Chart.js instance and buffers
 
 **Data Flow:**
 
 ```
 Streamer onData callback
   ↓
-Chart.appendData(seriesId, Float64Array, Float64Array)
+Chart.update(seriesId, Float64Array[], Float64Array[])
   ↓
-Copy data into internal series buffers (required by Chart.js)
+Store latest segments and increment generation counter
   ↓
-Apply rolling window if needed
-  ↓
-Update Chart.js data
-  ↓
-Batch/throttle render
-  ↓
-Chart.js render to canvas
+On animation frame: if generation changed, convert segments to Chart.js row-oriented data, apply rolling window, and call Chart.js `update()`
 ```
 
 ### Main Application
@@ -200,7 +219,7 @@ Chart.js render to canvas
 **Flow:**
 
 ```typescript
-async function main() {
+function main() {
   // 1. Create Streamer
   const streamer = new Streamer(`ws://${baseHost}/ws2`);
 
@@ -220,10 +239,10 @@ async function main() {
       });
     },
 
-    onData: (seriesId, xData, yData) => {
-      // 4. Forward data to Chart
+    onData: (seriesId, xSegments, ySegments) => {
+      // 4. Forward data to Chart (update with Streamer-owned buffer segments)
       if (chart) {
-        chart.appendData(seriesId, xData, yData);
+        chart.update(seriesId, xSegments, ySegments);
       }
     },
 
@@ -243,7 +262,7 @@ async function main() {
   });
 
   // 6. Connect and start streaming
-  await streamer.connect();
+  streamer.connect();
 }
 ```
 
@@ -267,10 +286,10 @@ const chart2 = new Chart({
 
 // Both charts receive data from same Streamer
 streamer.registerCallbacks({
-  onData: (seriesId, xData, yData) => {
-    // Route data to appropriate chart(s)
-    if (seriesId <= 1) chart1.appendData(seriesId, xData, yData);
-    if (seriesId >= 2) chart2.appendData(seriesId, xData, yData);
+  onData: (seriesId, xSegments, ySegments) => {
+    // Route data to appropriate chart(s) using Streamer-owned buffer segments
+    if (seriesId <= 1) chart1.render(seriesId, xSegments, ySegments);
+    if (seriesId >= 2) chart2.render(seriesId, xSegments, ySegments);
   }
 });
 ```
@@ -316,18 +335,6 @@ streamer.registerCallbacks({
    - End-to-end streaming with mock backend
    - Multi-chart scenarios
    - High-frequency data stress tests
-
-### Key Differences from v1
-
-| Aspect                  | v1 (Legacy)                     | v2 (New)                          |
-|-------------------------|---------------------------------|-----------------------------------|
-| **Protocol**            | JSON `/ws`                      | Binary `/ws2`                     |
-| **X Values**            | Shared across all series        | Independent per series            |
-| **Architecture**        | Monolithic Player + Chart       | Decoupled Streamer + Chart        |
-| **Communication**       | Tight coupling                  | Callback-based                    |
-| **Multi-Chart**         | Not supported                   | Fully supported                   |
-| **Performance**         | JSON parsing overhead           | Zero-copy TypedArrays             |
-| **Testability**         | Limited (tight coupling)        | High (decoupled components)       |
 
 ### File Structure
 

@@ -57,7 +57,7 @@ This is a **major frontend rewrite** to support multi-series with independent X 
 
 ### Phase 2: Frontend Rewrite
 
-- [x] **Step 1:** Document new frontend architecture in docs/development/architecture.md
+- [x] **Step 1:** Document new frontend architecture in docs/development/frontend-architecture.md
   - [x] Describe Streamer component responsibilities
   - [x] Describe Chart component API and lifecycle
   - [x] Document data flow between components
@@ -68,20 +68,25 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [ ] Create `v2.html` as new entrypoint
   - [ ] Create `src/v2/` directory for TypeScript code
   - [ ] Copy and adapt necessary assets (CSS, etc.) to v2
-  - [ ] Set up testing infrastructure for TypeScript and add coverage/linting commands
+  - [ ] Set up testing/benchmark infrastructure for TypeScript and add coverage/linting commands
 
 - [ ] **Step 3:** Implement Streamer component
-  - [ ] Create `src/v2/streamer.ts`
-  - [ ] Implement WebSocket connection to `/ws2`
-  - [ ] Decode binary envelope protocol (reuse/adapt from backend tests)
-  - [ ] Handle METADATA message (parse JSON, store series info)
-  - [ ] Handle DATA messages (buffer and dispatch to callbacks)
-  - [ ] Handle STREAM_END message (notify callbacks, close connection)
-  - [ ] Support callback registration/deregistration
-  - [ ] Optimize for low allocation (reuse buffers where possible)
-  - [ ] Add comprehensive tests with good coverage
+  - [ ] Create `src/v2/protocol.ts` implementing envelope parsing and message decoding (mirror `ws_protocol.go` behavior)
+  - [ ] Add unit tests for protocol decode/encode round-trips and malformed data handling
+  - [ ] Create `src/v2/circular_buffer.ts` implementing a typed `CircularBuffer<Float64Array>` abstraction with `append`, `reserve`, and a method to produce ordered `Float64Array` segment views (1 or 2 segments when wrapped)
+  - [ ] Add unit tests and benchmarks for `CircularBuffer` (wrap and non-wrap cases, performance)
 
-- [ ] **Step 4:** Implement Chart component
+- [ ] **Step 4:** Implement Streamer using `CircularBuffer`
+  - [ ] Create `src/v2/streamer.ts`
+  - [ ] Implement WebSocket connection to `/ws2` and use `protocol.ts` for message decoding
+  - [ ] On METADATA: parse JSON, create per-series `CircularBuffer` instances keyed by seriesId
+  - [ ] On DATA: append into the `CircularBuffer` (insert `NaN` sentinel for Length==0 breaks), and dispatch ordered `Float64Array` segment arrays via callbacks
+  - [ ] On STREAM_END: notify callbacks and close connection
+  - [ ] Support callback registration/deregistration and the segment-array `onData` API
+  - [ ] Optimize for low allocation (reuse buffers, avoid copying on hot path)
+  - [ ] Add comprehensive tests and benchmarks for Streamer behavior (including integration with `CircularBuffer`)
+
+ - [ ] **Step 5:** Implement Chart component
   - [ ] Consider approaches for testing visual elements for AI agents
   - [ ] Create `src/v2/chart.ts`
   - [ ] Define Chart API (constructor options: series IDs, display config)
@@ -91,25 +96,25 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [ ] Implement efficient data appending (no full re-renders)
   - [ ] Add basic configuration (colors, labels, etc.)
 
-- [ ] **Step 5:** Create v2 main application
+- [ ] **Step 6:** Create v2 main application
   - [ ] Create `src/v2/main.ts`
   - [ ] Initialize Streamer and connect to `/ws2`
   - [ ] Create one or more Chart instances
   - [ ] Register chart update callbacks with Streamer
   - [ ] Handle connection lifecycle (connect, stream end, errors)
 
-- [ ] **Step 6:** Add comprehensive tests for v2 components
+- [ ] **Step 7:** Add comprehensive tests for v2 components
   - [ ] Integration tests for v2 app (end-to-end streaming)
   - [ ] Performance tests (memory usage, frame rates)
   - [ ] Ensure 100% coverage where possible
 
-- [ ] **Step 7:** Update build and deployment
+- [ ] **Step 8:** Update build and deployment
   - [ ] Update Makefile to build v2 frontend
   - [ ] Ensure v2.html is served by backend
   - [ ] Test v2 with live data streaming
   - [ ] Verify no regressions in original frontend
 
-- [ ] **Step 8:** Final validation and documentation
+- [ ] **Step 9:** Final validation and documentation
   - [ ] Run all tests (backend and frontend)
   - [ ] Update user documentation for v2 features
   - [ ] Mark Phase 2 complete
