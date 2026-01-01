@@ -1,130 +1,137 @@
-# Wesplot Backend Refactoring: /ws2 Binary Envelope Protocol
+# Phase 2: Frontend Rewrite for Multi-Series Support
 
-**Date Started:** 30 December 2025
+**Date Started:** 1 January 2026
 
 ## Context and Rationale
 
-We are implementing a major refactoring of the wesplot backend's websocket protocol to address three critical limitations:
+Phase 1 successfully implemented the `/ws2` binary envelope protocol backend, enabling multi-X/Y data streaming. However, the frontend remains tied to the original JSON-based `/ws` endpoint, supporting only single-X shared across all series and a single plot display.
 
-### Problems with Current /ws Endpoint
+### Problems with Current Frontend
 
-1. **JSON Protocol Performance Issues**
-   - Current protocol streams JSON-encoded arrays of `DataRow` objects
-   - JSON parsing can become a bottleneck when piping high-frequency data
-   - Each message requires full JSON deserialization on the frontend
-   - No binary encoding support for efficient data transfer
+1. **Single Plot Limitation**
+   - Frontend displays only one chart/plot visual element instead of supporting split views
 
-2. **Limited Message Types**
-   - Protocol only supports `DataRow` type (X: float64, Ys: []float64)
-   - No envelope/framing to encapsulate different message types
-   - Metadata and errors require separate HTTP endpoints (`/metadata`, `/errors`)
-   - Cannot send control messages inline with data stream
-   - No protocol versioning or extensibility
+2. **Shared X-Value Assumption**
+   - Assumes all series share the same X values as it uses the /ws JSON instead of the /ws2 binary protocol
+   - Cannot handle series with different X sampling or offsets
 
-3. **Single X Value Limitation**
-   - Current `DataRow` assigns one X value to multiple Y values
-   - Eliminates possibility of having series with offset X values
-   - Cannot represent data where different series have different X sampling
-   - Limitation extends throughout data broadcaster architecture
+3. **Tight Coupling and Poor Architecture**
+   - Player component handles both streaming and UI logic
+   - Deep coupling between Player and WesplotChart
+   - Difficult to extend or test independently
 
-### Refactoring Strategy
+4. **Performance Concerns**
+   - Not optimized for high-frequency data streaming
+   - Potential memory allocation issues in vanilla JS/TypeScript
 
-This is a **phased refactoring**. We cannot change everything at once, so we're starting with:
+### Phase 2 Refactoring Strategy
 
-**Phase 1 (Current):** Create new `/ws2` endpoint with binary envelope protocol
-- Implement binary wire format with message type framing
-- Support multiple X arrays and corresponding Y arrays
-- Inline metadata and error messages in websocket stream
-- Leave existing `/ws` endpoint untouched (backward compatibility)
-- Leave upstream components (DataBroadcaster, DataReader) unchanged
-- Leave frontend unchanged for now
+This is a **major frontend rewrite** to support multi-series with independent X values. We will:
 
-**Future Phases:**
-- Refactor DataBroadcaster to support multi-X/Y data model
-- Update frontend to consume `/ws2` protocol
-- Migrate or deprecate `/ws` endpoint
-- Update data readers and parsing logic
+**Create v2 Frontend:**
+- New entrypoint: `v2.html`
+- TypeScript code in `src/v2/` directory
+- Maintain existing `frontend/` for backward compatibility
+
+**New Architecture:**
+- **Streamer Component:** Connects to `/ws2`, decodes binary protocol, manages streaming
+  - Registers arbitrary callbacks for data events
+  - Handles metadata, data, and stream-end messages
+  - Optimized for performance (minimize allocations)
+- **Chart Component:** Reusable vanilla JS component for rendering charts
+  - Can be instantiated multiple times, each time taking in a different container element to take ownership over
+  - Configurable per chart (series selection, display options)
+  - Supports multiple series per chart with different X values
+
+**Incremental Approach:**
+- Start with single chart showing multiple series
+- Future: Support multiple chart instances
+- Maintain vanilla JS for performance and simplicity
+
+**Performance Focus:**
+- Minimize object creation and copying
+- Use efficient data structures for streaming data
+- Batch updates where possible
 
 ## Implementation TODO List
 
-### Phase 1: /ws2 Binary Envelope Protocol Backend
+### Phase 2: Frontend Rewrite
 
-- [x] **Step 1:** Record task context and TODO list in CURRENT_TASK.md
+- [ ] **Step 1:** Document new frontend architecture in docs/development/architecture.md
+  - [ ] Describe Streamer component responsibilities
+  - [ ] Describe Chart component API and lifecycle
+  - [ ] Document data flow between components
+  - [ ] Include diagrams for component interactions
+  - [ ] **REQUEST REVIEW AFTER THIS STEP**
 
-- [x] **Step 2:** Design and document binary envelope protocol
-  - [x] Create docs/development/ws2-protocol.md
-  - [x] Define wire format (header structure, length fields, payload encoding)
-  - [x] Define message types: Data, Metadata, Error, StreamEnd
-  - [x] Document multi-X/Y data payload format
-  - [x] Document metadata message format
-  - [x] Document error message format
-  - [x] Document protocol versioning strategy
-  - [x] Include examples and byte diagrams
-  - [x] **REQUEST REVIEW AFTER THIS STEP**
+- [ ] **Step 2:** Set up v2 frontend structure
+  - [ ] Create `v2.html` as new entrypoint
+  - [ ] Create `src/v2/` directory for TypeScript code
+  - [ ] Set up build configuration for v2 (update vite.config.js or similar)
+  - [ ] Copy and adapt necessary assets (CSS, etc.) to v2
 
-- [x] **Step 3:** Implement core protocol encoding/decoding
-  - [x] Create ws_protocol.go with message type constants
-  - [x] Implement envelope message encoder/decoder
-  - [x] Implement multi-X/Y data payload encoder/decoder
-  - [x] Implement metadata message encoder/decoder
-  - [x] Implement stream-end message encoder/decoder
+- [ ] **Step 3:** Implement Streamer component
+  - [ ] Create `src/v2/streamer.ts`
+  - [ ] Implement WebSocket connection to `/ws2`
+  - [ ] Decode binary envelope protocol (reuse/adapt from backend tests)
+  - [ ] Handle METADATA message (parse JSON, store series info)
+  - [ ] Handle DATA messages (buffer and dispatch to callbacks)
+  - [ ] Handle STREAM_END message (notify callbacks, close connection)
+  - [ ] Support callback registration/deregistration
+  - [ ] Optimize for low allocation (reuse buffers where possible)
 
-- [x] **Step 4:** Write comprehensive unit tests for protocol
-  - [x] Create ws_protocol_test.go
-  - [x] Test encoding/decoding round-trips
-  - [x] Test edge cases: empty arrays, single values, large payloads
-  - [x] Test malformed data handling
-  - [x] Test all message types
-  - [x] Verify 100% line coverage with `make test COVERAGE=1`
+- [ ] **Step 4:** Implement Chart component
+  - [ ] Create `src/v2/chart.ts`
+  - [ ] Define Chart API (constructor options: series IDs, display config)
+  - [ ] Integrate with Chart.js for rendering
+  - [ ] Handle data updates from Streamer callbacks
+  - [ ] Support multiple series with independent X values
+  - [ ] Implement efficient data appending (no full re-renders)
+  - [ ] Add basic configuration (colors, labels, etc.)
 
-- [x] **Step 5:** Add /ws2 handler in http_server.go
-  - [x] Implement handleWebSocket2() function
-  - [x] Accept websocket connection with binary frames
-  - [x] Send metadata envelope on connection
-  - [x] Register channel with DataBroadcaster
-  - [x] Transform single-X DataRow to multi-X format (duplicate X per Y)
-  - [x] Stream data using binary protocol
-  - [x] Send error envelopes on stream issues
-  - [x] Send stream-end envelope on completion
-  - [x] Add route: `s.mux.HandleFunc("/ws2", s.handleWebSocket2)`
+- [ ] **Step 5:** Create v2 main application
+  - [ ] Create `src/v2/main.ts`
+  - [ ] Initialize Streamer and connect to `/ws2`
+  - [ ] Create one or more Chart instances
+  - [ ] Register chart update callbacks with Streamer
+  - [ ] Handle connection lifecycle (connect, stream end, errors)
 
-- [x] **Step 6:** Write integration tests for /ws2
-  - [x] Add tests to http_server_test.go
-  - [x] Test binary message parsing
-  - [x] Test metadata delivery on connect
-  - [x] Test data streaming with multi-X format
-  - [x] Test multi-client broadcasting
-  - [x] Test stream-end envelope
-  - [x] Test error envelope propagation
-  - [x] Add regression test: verify /ws still works unchanged
+- [ ] **Step 6:** Add comprehensive tests for v2 components
+  - [ ] Unit tests for Streamer (mock WebSocket, test protocol decoding)
+  - [ ] Unit tests for Chart (data updates, rendering)
+  - [ ] Integration tests for v2 app (end-to-end streaming)
+  - [ ] Performance tests (memory usage, frame rates)
+  - [ ] Ensure 100% coverage where possible
 
-- [x] **Step 7**: Write a test client in Go
-  - [x] Implement a command line based decoder that can decode the envelope message and internal data from the websocket for testing purposes
+- [ ] **Step 7:** Update build and deployment
+  - [ ] Update Makefile to build v2 frontend
+  - [ ] Ensure v2.html is served by backend
+  - [ ] Test v2 with live data streaming
+  - [ ] Verify no regressions in original frontend
 
-- [x] **Step 8:** Final validation
-  - [x] Run `make test COVERAGE=1` - achieved 83.2% coverage overall
-  - [x] Run `make lint` - no errors or warnings
-  - [x] Verify all /ws tests still pass (no regression)
-  - [x] Verify all /ws2 tests pass
+- [ ] **Step 8:** Final validation and documentation
+  - [ ] Run all tests (backend and frontend)
+  - [ ] Update user documentation for v2 features
+  - [ ] Mark Phase 2 complete
 
 ## Backward Compatibility
 
-- `/ws` endpoint remains completely unchanged
-- Both endpoints coexist and can be used simultaneously
-- Frontend can choose which endpoint to connect to
-- No breaking changes to existing functionality
+- Original `frontend/` remains unchanged and functional
+- `/ws` endpoint continues to work
+- Users can choose v1 or v2 frontend via URL
+- No breaking changes to backend API
 
 ## Important Notes for Sub-Agents
 
 **Testing Policy:**
 - All code changes must have comprehensive unit tests
-- Code coverage must be 100% - verify with `make test COVERAGE=1`
-- Think through edge cases and document why they matter
-- Test failures must have good error messages
+- Performance-critical code should include benchmarks
+- Test edge cases: empty data, single points, high frequency
+- Test failure scenarios: WebSocket disconnects, malformed messages
 
 **Completion Policy:**
 - No temporary TODOs or placeholders in code
-- Run `make test` and `make lint` before marking tasks complete
+- Run tests and lint before marking tasks complete
 - If blocked, explain why and ask user for guidance
 
 **Progress Tracking:**
@@ -132,13 +139,3 @@ This is a **phased refactoring**. We cannot change everything at once, so we're 
 - Check off completed items with [x]
 - Mark current item as IN PROGRESS
 - Keep context section up to date
-
-## Follow-Up Work (Out of Scope for Phase 1)
-
-- [ ] Update frontend TypeScript to decode binary protocol
-- [ ] Update Player class to handle envelope messages
-- [ ] Refactor DataBroadcaster for native multi-X/Y support
-- [ ] Update data readers to parse multi-X data
-- [ ] Migrate frontend to use /ws2
-- [ ] Deprecate /ws endpoint
-- [ ] Update documentation for end users
