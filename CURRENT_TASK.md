@@ -57,12 +57,12 @@ This is a **major frontend rewrite** to support multi-series with independent X 
 
 ### Phase 2: Frontend Rewrite
 
-- [ ] **Step 1:** Document new frontend architecture in docs/development/architecture.md
-  - [ ] Describe Streamer component responsibilities
-  - [ ] Describe Chart component API and lifecycle
-  - [ ] Document data flow between components
-  - [ ] Include diagrams for component interactions
-  - [ ] **REQUEST REVIEW AFTER THIS STEP**
+- [x] **Step 1:** Document new frontend architecture in docs/development/architecture.md
+  - [x] Describe Streamer component responsibilities
+  - [x] Describe Chart component API and lifecycle
+  - [x] Document data flow between components
+  - [x] Include diagrams for component interactions
+  - [x] **REQUEST REVIEW AFTER THIS STEP**
 
 - [ ] **Step 2:** Set up v2 frontend structure
   - [ ] Create `v2.html` as new entrypoint
