@@ -67,8 +67,8 @@ This is a **major frontend rewrite** to support multi-series with independent X 
 - [ ] **Step 2:** Set up v2 frontend structure
   - [ ] Create `v2.html` as new entrypoint
   - [ ] Create `src/v2/` directory for TypeScript code
-  - [ ] Set up build configuration for v2 (update vite.config.js or similar)
   - [ ] Copy and adapt necessary assets (CSS, etc.) to v2
+  - [ ] Set up testing infrastructure for TypeScript and add coverage/linting commands
 
 - [ ] **Step 3:** Implement Streamer component
   - [ ] Create `src/v2/streamer.ts`
@@ -79,8 +79,10 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [ ] Handle STREAM_END message (notify callbacks, close connection)
   - [ ] Support callback registration/deregistration
   - [ ] Optimize for low allocation (reuse buffers where possible)
+  - [ ] Add comprehensive tests with good coverage
 
 - [ ] **Step 4:** Implement Chart component
+  - [ ] Consider approaches for testing visual elements for AI agents
   - [ ] Create `src/v2/chart.ts`
   - [ ] Define Chart API (constructor options: series IDs, display config)
   - [ ] Integrate with Chart.js for rendering
@@ -97,8 +99,6 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [ ] Handle connection lifecycle (connect, stream end, errors)
 
 - [ ] **Step 6:** Add comprehensive tests for v2 components
-  - [ ] Unit tests for Streamer (mock WebSocket, test protocol decoding)
-  - [ ] Unit tests for Chart (data updates, rendering)
   - [ ] Integration tests for v2 app (end-to-end streaming)
   - [ ] Performance tests (memory usage, frame rates)
   - [ ] Ensure 100% coverage where possible
