@@ -72,8 +72,8 @@ This is a **major frontend rewrite** to support multi-series with independent X 
 - [ ] **Step 3:** Implement Streamer component
   - [ ] Create `src/v2/protocol.ts` implementing envelope parsing and message decoding (mirror `ws_protocol.go` behavior)
   - [ ] Add unit tests for protocol decode/encode round-trips and malformed data handling
-  - [ ] Create `src/v2/circular_buffer.ts` implementing a typed `CircularBuffer<Float64Array>` abstraction with `append`, `reserve`, and a method to produce ordered `Float64Array` segment views (1 or 2 segments when wrapped)
-  - [ ] Add unit tests and benchmarks for `CircularBuffer` (wrap and non-wrap cases, performance)
+  - [x] Create `src/v2/circular_buffer.ts` implementing a typed `CircularBuffer<Float64Array>` abstraction with `append`, `reserve`, and a method to produce ordered `Float64Array` segment views (1 or 2 segments when wrapped)
+  - [x] Add unit tests and benchmarks for `CircularBuffer` (wrap and non-wrap cases, performance)
 
 - [ ] **Step 4:** Implement Streamer using `CircularBuffer`
   - [ ] Create `src/v2/streamer.ts`

@@ -1,5 +1,5 @@
 import { bench, describe } from "vitest";
 
 describe("Streamer performance", () => {
-  bench("placeholder", () => {});
+  bench.skip("placeholder", () => {});
 });

@@ -25,7 +25,7 @@ First run `cd frontend` to get into the frontend directory. Run this as it is au
 - Run test: `npm run test`
 - Run benchmark: `npm run benchmark`
 - Run test with coverage: `npm run test:coverage`
-- Run lint: `npm run lint`
+- Run lint: `npm run lint:write`
 
 ## Coding rules
 
