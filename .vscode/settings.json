@@ -39,6 +39,12 @@
       "matchCommandLine": true
     },
   },
+
   "biome.lsp.bin": "./frontend/node_modules/@biomejs/biome/bin/biome",
-  "biome.configurationPath": "./frontend/biome.json"
+  "biome.configurationPath": "./frontend/biome.json",
+
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome",
+    "editor.formatOnSave": true
+  }
 }
