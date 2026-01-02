@@ -8,11 +8,24 @@ The architecture and file structure of the project is documented in [docs/develo
 
 ## Build and test instructions
 
+Try to ALWAYS use these exact commands as they are auto approved.
+
+### Backend
+
 - Building the binary: `make prod` (see Makefile if necessary) which creates `build/wesplot`.
 - Lint the code with `make lint`
 - Run all tests: `make test`
 - Run all tests and check for code coverage: `make test COVERAGE=1`
 - Run these commands separately (not with && or ;) so they can be auto approved as auto approval relies on exact matches.
+
+### Frontend
+
+First run `cd frontend` to get into the frontend directory. Run this as it is auto approved.
+
+- Run test: `npm run test`
+- Run benchmark: `npm run benchmark`
+- Run test with coverage: `npm run test:coverage`
+- Run lint: `npm run lint`
 
 ## Coding rules
 

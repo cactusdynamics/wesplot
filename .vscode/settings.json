@@ -22,5 +22,23 @@
       "approve": true,
       "matchCommandLine": true
     },
-  }
+    "/^cd frontend$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^npm run test$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^npm run benchmark$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^npm run lint$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+  },
+  "biome.lsp.bin": "./frontend/node_modules/@biomejs/biome/bin/biome",
+  "biome.configurationPath": "./frontend/biome.json"
 }

@@ -64,10 +64,10 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [x] Include diagrams for component interactions
   - [x] **REQUEST REVIEW AFTER THIS STEP**
 
-- [ ] **Step 2:** Set up v2 frontend structure
-  - [ ] Create `v2.html` as new entrypoint
-  - [ ] Create `src/v2/` directory for TypeScript code
-  - [ ] Set up testing/benchmark infrastructure for TypeScript and add coverage/linting commands
+- [x] **Step 2:** Set up v2 frontend structure
+  - [x] Create `v2.html` as new entrypoint
+  - [x] Create `src/v2/` directory for TypeScript code
+  - [x] Set up testing/benchmark infrastructure for TypeScript and add coverage/linting commands
 
 - [ ] **Step 3:** Implement Streamer component
   - [ ] Create `src/v2/protocol.ts` implementing envelope parsing and message decoding (mirror `ws_protocol.go` behavior)
