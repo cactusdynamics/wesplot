@@ -38,8 +38,15 @@
       "approve": true,
       "matchCommandLine": true
     },
+    "/^npm run lint:write$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^npm run test:coverage$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
   },
-
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome",
     "editor.formatOnSave": true

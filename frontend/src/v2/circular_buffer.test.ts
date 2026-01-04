@@ -58,4 +58,44 @@ describe("CircularBuffer", () => {
     expect(out[1]).toBe(2);
     expect(out[3]).toBe(3);
   });
+
+  it("capacity returns the buffer capacity", () => {
+    const b = new CircularBuffer(5);
+    expect(b.capacity()).toBe(5);
+  });
+
+  it("clear resets the buffer", () => {
+    const b = new CircularBuffer(4);
+    b.append(1, 2, 3);
+    expect(b.length()).toBe(3);
+    b.clear();
+    expect(b.length()).toBe(0);
+    expect(b.segments()).toEqual([]);
+  });
+
+  it("append with no elements does nothing", () => {
+    const b = new CircularBuffer(4);
+    b.append(1, 2);
+    b.append();
+    expect(b.length()).toBe(2);
+    expect(concatSegments(b.segments())).toEqual([1, 2]);
+  });
+
+  it("constructor throws for zero capacity", () => {
+    expect(() => new CircularBuffer(0)).toThrow(
+      "capacity must be a positive integer",
+    );
+  });
+
+  it("constructor throws for negative capacity", () => {
+    expect(() => new CircularBuffer(-1)).toThrow(
+      "capacity must be a positive integer",
+    );
+  });
+
+  it("constructor throws for non-integer capacity", () => {
+    expect(() => new CircularBuffer(1.5)).toThrow(
+      "capacity must be a positive integer",
+    );
+  });
 });

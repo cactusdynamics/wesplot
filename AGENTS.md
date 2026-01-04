@@ -4,7 +4,13 @@ Wesplot is a project that gets live data as input and pipes it into the browser 
 
 The current focus of the project is to pipe the Go binary's stdin to one or more browser tabs where it is plotted via chart.js.
 
-The architecture and file structure of the project is documented in [docs/development/architecture.md](./docs/development/architecture.md). Read this file and read the referenced files if not sure about data flow or architecture.
+## Documentation
+
+Read these if not sure about data flow or architecture.
+
+- Architecture and file structure: docs/development/architecture.md
+- Data protocol between processes: docs/development/ws-protocol.md
+- Frontend architecture: docs/development/frontend-architecture.md
 
 ## Build and test instructions
 

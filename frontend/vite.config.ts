@@ -1,7 +1,8 @@
+import { resolve } from "node:path";
 import { visualizer } from "rollup-plugin-visualizer";
-import { resolve } from "path";
+import { defineConfig } from "vite";
 
-export default {
+export default defineConfig({
   plugins: [
     // This will output size visualization for the JS bundle at stats.html in
     // this folder.
@@ -15,4 +16,4 @@ export default {
       },
     },
   },
-};
+});

@@ -23,4 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
+# vite bundle stats
 stats.html
+
+# vitest coverage
+coverage/*
