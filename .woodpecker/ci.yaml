@@ -3,23 +3,35 @@ when:
     - push
 
 steps:
-  - name: test
+  - name: backend-test
     image: golang:1.25
     commands:
       - go install golang.org/x/tools/gopls@latest
-      - make lint
+      - make backend-lint
       - make backend-test COVERAGE=1
+
+  - name: frontend-test
+    image: node:24
+    commands:
+      - mkdir -p build
+      - cd frontend
+      - npm install
+      - npm run lint
+      - npm run test:coverage
+      - npm run benchmark
+      - cp -ar coverage ../build/coverage
 
   - name: build-frontend
     image: node:24
+    depends_on:
+      - frontend-test
     commands:
-      - cd frontend && npm install && cd ..
       - make frontend-prod
 
   - name: build-backend
     image: golang:1.25
     depends_on:
-      - test
+      - backend-test
       - build-frontend
     commands:
       - make prod-all
