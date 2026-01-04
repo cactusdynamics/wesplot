@@ -26,7 +26,7 @@ Try to ALWAYS use these exact commands as they are auto approved.
 
 ### Frontend
 
-First run `cd frontend` to get into the frontend directory. Run this as it is auto approved.
+First run `cd frontend` to get into the frontend directory (the terminal might already be in there, check with `pwd`). Run this as it is auto approved.
 
 - Run test: `npm run test`
 - Run benchmark: `npm run benchmark`

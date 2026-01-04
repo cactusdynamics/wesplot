@@ -68,9 +68,11 @@ class Streamer {
   // Connection state
   isConnected(): boolean;
 
-  // Internals (design): per-series buffers created at construction time
+  // Internals (design): per-series buffers created on-demand
   // xBuffers: Map<seriesId, CircularBuffer>  (Float64 backing)
   // yBuffers: Map<seriesId, CircularBuffer>  (Float64 backing)
+  // Buffers are created when METADATA is received (based on number of series),
+  // or on-demand when DATA messages arrive if METADATA hasn't been received yet.
   // The `CircularBuffer` abstraction encapsulates write position, read
   // slicing, and provides zero-copy `Float64Array` segment views for
   // dispatch (1 or 2 segments when wrapped).
@@ -89,10 +91,10 @@ class Streamer {
    - **Zero-copy optimization:** Wraps binary data in TypedArrays without copying
 
 3. **Message Handling:**
-   - **METADATA (0x02):** Parse JSON, invoke `onMetadata` callback
+   - **METADATA (0x02):** Parse JSON, create per-series `CircularBuffer` instances (one X buffer and one Y buffer for each series based on the `Columns` array length), then invoke `onMetadata` callback
    - **DATA (0x01):** Decode SeriesID, Length, X/Y arrays
      - If `Length == 0` (per protocol), treat this as a series break (discontinuity). To keep the hot path simple and zero-copy, the Streamer will append a sentinel `NaN` value into the X and Y buffers at the current write position and advance the write position by one.
-     - Otherwise, append incoming data into Streamer's preallocated per-series ring buffers (owned, keyed by `seriesId`). Track write position and valid length.
+     - Otherwise, append incoming data into Streamer's per-series ring buffers (owned, keyed by `seriesId`). If buffers don't exist for the seriesId (e.g., DATA arrived before METADATA), create them on-demand.
      - On dispatch, construct one or more `Float64Array` views that present the valid data in logical order. If the ring buffer did not wrap, a single contiguous view is produced; if it wrapped, two views are produced (tail then head).
      - Invoke `onData(seriesId, xSegments, ySegments)` where `xSegments` and `ySegments` are ordered arrays of `Float64Array` segments to be treated as concatenated by the consumer. The Streamer guarantees that segments are split only by buffer wrap; explicit series breaks are encoded inline as `NaN` values in the segments.
    - **STREAM_END (0x03):** Parse JSON, invoke `onStreamEnd` callback

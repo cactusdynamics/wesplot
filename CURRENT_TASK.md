@@ -75,15 +75,16 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [x] Create `src/v2/circular_buffer.ts` implementing a typed `CircularBuffer<Float64Array>` abstraction with `append`, `reserve`, and a method to produce ordered `Float64Array` segment views (1 or 2 segments when wrapped)
   - [x] Add unit tests and benchmarks for `CircularBuffer` (wrap and non-wrap cases, performance)
 
-- [ ] **Step 4:** Implement Streamer using `CircularBuffer` and `aprotocol.ts`
-  - [ ] Create `src/v2/streamer.ts`
-  - [ ] Implement WebSocket connection to `/ws2` and use `protocol.ts` for message decoding
-  - [ ] On METADATA: parse JSON, create per-series `CircularBuffer` instances keyed by seriesId
-  - [ ] On DATA: append into the `CircularBuffer` (insert `NaN` sentinel for Length==0 breaks), and dispatch ordered `Float64Array` segment arrays via callbacks
-  - [ ] On STREAM_END: notify callbacks and close connection
-  - [ ] Support callback registration/deregistration and the segment-array `onData` API
-  - [ ] Optimize for low allocation (reuse buffers, avoid copying on hot path)
-  - [ ] Add comprehensive tests and benchmarks for Streamer behavior (including integration with `CircularBuffer`)
+- [x] **Step 4:** Implement Streamer using `CircularBuffer` and `protocol.ts`
+  - [x] Create `src/v2/streamer.ts`
+  - [x] Implement WebSocket connection to `/ws2` and use `protocol.ts` for message decoding
+  - [x] On METADATA: parse JSON, create per-series `CircularBuffer` instances keyed by seriesId
+  - [x] On DATA: append into the `CircularBuffer` (insert `NaN` sentinel for Length==0 breaks), and dispatch ordered `Float64Array` segment arrays via callbacks
+  - [x] On STREAM_END: notify callbacks and close connection
+  - [x] Support callback registration/deregistration and the segment-array `onData` API
+  - [x] Optimize for low allocation (reuse buffers, avoid copying on hot path)
+  - [x] Add comprehensive tests and benchmarks for Streamer behavior (including integration with `CircularBuffer`)
+  - [x] Update documentation to match implementation (buffers created on-demand)
 
  - [ ] **Step 5:** Implement Chart component
   - [ ] Consider approaches for testing visual elements for AI agents
