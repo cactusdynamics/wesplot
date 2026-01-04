@@ -1,4 +1,4 @@
-.PHONY: clean backend-lint lint backend-test test frontend-dev backend-dev prod prod-all frontend-prod
+.PHONY: clean backend-lint frontend-lint lint backend-test frontend-test test frontend-dev backend-dev prod prod-all frontend-prod
 
 DIRTY_TREE := $(shell git diff-index --quiet HEAD -- || echo '+dirty')
 COMMIT     := $(addsuffix $(DIRTY_TREE),$(shell git rev-parse --short HEAD))
@@ -16,13 +16,19 @@ backend-lint:
 	go vet ./...
 	gopls check -severity=info $(shell find . -name '*.go')
 
-lint: backend-lint
+frontend-lint:
+	cd frontend && npm run lint
+
+lint: backend-lint frontend-lint
 
 backend-test:
 	@mkdir -p build
 	COVERAGE_FILE=$(COVERAGE_FILE) COVERAGE=$(COVERAGE) scripts/run-backend-test.sh
 
-test: backend-test
+frontend-test:
+	cd frontend && npm run test
+
+test: backend-test frontend-test
 
 backend-dev:
 	# Not the best for now but whatever
