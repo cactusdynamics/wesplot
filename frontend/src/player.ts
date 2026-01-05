@@ -22,7 +22,7 @@ export class Player {
   private _data_buffer: DataRow[] = [];
 
   private _last_data_received_time?: number;
-  private _interval_id: number;
+  private _interval_id: ReturnType<typeof setInterval>;
 
   constructor() {
     // Get all HTML elements

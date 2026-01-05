@@ -4,15 +4,34 @@ Wesplot is a project that gets live data as input and pipes it into the browser 
 
 The current focus of the project is to pipe the Go binary's stdin to one or more browser tabs where it is plotted via chart.js.
 
-The architecture and file structure of the project is documented in [docs/development/architecture.md](./docs/development/architecture.md). Read this file and read the referenced files if not sure about data flow or architecture.
+## Documentation
+
+Read these if not sure about data flow or architecture.
+
+- Architecture and file structure: docs/development/architecture.md
+- Data protocol between processes: docs/development/ws-protocol.md
+- Frontend architecture: docs/development/frontend-architecture.md
 
 ## Build and test instructions
+
+Try to ALWAYS use these exact commands as they are auto approved.
+
+### Backend
 
 - Building the binary: `make prod` (see Makefile if necessary) which creates `build/wesplot`.
 - Lint the code with `make lint`
 - Run all tests: `make test`
 - Run all tests and check for code coverage: `make test COVERAGE=1`
 - Run these commands separately (not with && or ;) so they can be auto approved as auto approval relies on exact matches.
+
+### Frontend
+
+First run `cd frontend` to get into the frontend directory (the terminal might already be in there, check with `pwd`). Run this as it is auto approved.
+
+- Run test: `npm run test`
+- Run benchmark: `npm run benchmark`
+- Run test with coverage: `npm run test:coverage`
+- Run lint: `npm run lint:write`
 
 ## Coding rules
 
