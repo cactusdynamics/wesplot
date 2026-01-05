@@ -1,5 +1,10 @@
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
-import type { DataMessage, StreamEndMessage, WSMessage } from "./protocol.js";
+import type {
+  DataMessage,
+  StreamEndMessage,
+  WSMessage,
+  WSMessageRaw,
+} from "./protocol.js";
 import {
   decodeDataMessage,
   decodeMetadataMessage,
@@ -12,7 +17,7 @@ import {
   MessageTypeMetadata,
   MessageTypeStreamEnd,
   ProtocolVersion,
-  setDataMessageBigEndianDecode,
+  setDataMessageBigEndianDecodeForTestOnly,
 } from "./protocol.js";
 
 import type { Metadata } from "./types.js";
@@ -211,14 +216,19 @@ describe("Protocol", () => {
       expect(() => decodeWSMessage(header)).toThrow("buffer too short");
     });
 
-    it("throws on unknown message type", () => {
+    it("returns WSMessageRaw for unknown message type", () => {
       const header = new Uint8Array(8);
       const view = new DataView(header.buffer);
       view.setUint8(0, ProtocolVersion);
       view.setUint8(3, 0xff); // Invalid type
       view.setUint32(4, 0, true); // No payload
 
-      expect(() => decodeWSMessage(header)).toThrow("unknown message type");
+      const decoded = decodeWSMessage(header);
+      expect(decoded.Header.Type).toBe(0xff);
+      expect(decoded.Header.Version).toBe(ProtocolVersion);
+      expect(decoded.Header.Reserved).toEqual([0, 0]);
+      expect(decoded.Header.Length).toBe(0);
+      expect((decoded as WSMessageRaw).Payload).toEqual(new Uint8Array(0));
     });
   });
 
@@ -321,11 +331,11 @@ describe("Protocol", () => {
 
 describe("Big Endian Implementation Data Decoder", () => {
   beforeAll(() => {
-    setDataMessageBigEndianDecode(true);
+    setDataMessageBigEndianDecodeForTestOnly(true);
   });
 
   afterEach(() => {
-    setDataMessageBigEndianDecode(!isLittleEndian);
+    setDataMessageBigEndianDecodeForTestOnly(!isLittleEndian);
   });
 
   it("round-trips DATA message with big endian implementation", () => {

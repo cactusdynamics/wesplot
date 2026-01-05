@@ -5,8 +5,8 @@
  * streaming data in tables, one per series.
  */
 
-import type { Metadata } from "../types.js";
 import { Streamer } from "./streamer.js";
+import type { Metadata } from "./types.js";
 
 let baseHost = location.host;
 if (import.meta.env.DEV) {

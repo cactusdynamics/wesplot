@@ -35,10 +35,16 @@ export type EnvelopeHeaderStreamEnd = EnvelopeHeaderBase & {
   Type: typeof MessageTypeStreamEnd;
 };
 
+// For unknown message types
+export type EnvelopeHeaderRaw = EnvelopeHeaderBase & {
+  Type: number;
+};
+
 export type EnvelopeHeader =
   | EnvelopeHeaderData
   | EnvelopeHeaderMetadata
-  | EnvelopeHeaderStreamEnd;
+  | EnvelopeHeaderStreamEnd
+  | EnvelopeHeaderRaw;
 
 export interface DataMessage {
   SeriesID: number; // uint32
@@ -69,7 +75,16 @@ export interface WSMessageStreamEnd {
   Payload: StreamEndMessage;
 }
 
-export type WSMessage = WSMessageData | WSMessageMetadata | WSMessageStreamEnd;
+export interface WSMessageRaw {
+  Header: EnvelopeHeaderRaw;
+  Payload: Uint8Array;
+}
+
+export type WSMessage =
+  | WSMessageData
+  | WSMessageMetadata
+  | WSMessageStreamEnd
+  | WSMessageRaw;
 
 // Implementation classes with lazy decoding
 export class DataMessageLazyObjLittleEndianHost implements DataMessage {
@@ -170,7 +185,7 @@ let DataMessageLazyObj = isLittleEndian
   : DataMessageLazyObjBigEndianHost;
 
 // For testing purposes
-export function setDataMessageBigEndianDecode(bigEndian: boolean) {
+export function setDataMessageBigEndianDecodeForTestOnly(bigEndian: boolean) {
   DataMessageLazyObj = bigEndian
     ? DataMessageLazyObjBigEndianHost
     : DataMessageLazyObjLittleEndianHost;
@@ -284,7 +299,10 @@ export function decodeEnvelopeHeader(buf: Uint8Array): EnvelopeHeader {
   return {
     Version: version,
     Reserved: reserved,
-    Type: type as EnvelopeHeader["Type"], // Override this even tho it can be wrong!
+    // Override this even tho it can be wrong to satisfy TS without introducing
+    // additional overhead from checks. This will simply fail later and get
+    // ignored in decodeWSMessage.
+    Type: type as EnvelopeHeader["Type"],
     Length: length,
   };
 }
@@ -456,7 +474,8 @@ export function decodeWSMessage(buf: Uint8Array): WSMessage {
   );
   const decoder = payloadDecoders[env.Type];
   if (!decoder) {
-    throw new Error(`unknown message type: 0x${env.Type.toString(16)}`);
+    // Return raw message for unknown types
+    return { Header: env, Payload: payloadBytes } as WSMessageRaw;
   }
   const payload = decoder(payloadBytes);
   return { Header: env, Payload: payload } as WSMessage;

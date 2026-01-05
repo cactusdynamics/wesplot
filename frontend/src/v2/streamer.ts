@@ -1,4 +1,3 @@
-import type { Metadata } from "../types.js";
 import { CircularBuffer } from "./circular_buffer.js";
 import {
   decodeWSMessage,
@@ -9,6 +8,7 @@ import {
   type WSMessageMetadata,
   type WSMessageStreamEnd,
 } from "./protocol.js";
+import type { Metadata } from "./types.js";
 
 export interface StreamerCallbacks {
   onMetadata?: (metadata: Metadata) => void;
@@ -80,10 +80,12 @@ export class Streamer {
       }
 
       this._streamEndReceived = false;
+      let connectionEstablished = false;
       this._ws = new WebSocket(this.wsUrl);
       this._ws.binaryType = "arraybuffer";
 
       this._ws.onopen = () => {
+        connectionEstablished = true;
         resolve();
       };
 
@@ -98,7 +100,9 @@ export class Streamer {
       };
 
       this._ws.onerror = () => {
-        reject(new Error("WebSocket connection failed"));
+        if (!connectionEstablished) {
+          reject(new Error("WebSocket connection failed"));
+        }
         this._invokeErrorCallbacks(new Error("WebSocket error"));
         this._ws = null;
       };
@@ -137,8 +141,7 @@ export class Streamer {
         this._handleStreamEnd(msg as WSMessageStreamEnd);
         break;
       default:
-        // Unknown message type - TypeScript doesn't know about this case
-        msg.Header satisfies never;
+        // Unknown message type - ignore for forward compatibility
         console.warn("Unknown message type:", msg);
         break;
     }
