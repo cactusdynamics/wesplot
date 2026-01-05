@@ -4,13 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wesplot v2</title>
+    <style>
+      table {
+        border-collapse: collapse;
+        margin: 10px;
+      }
+      th, td {
+        border: 1px solid #ddd;
+        padding: 4px;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      .status {
+        margin: 10px;
+      }
+    </style>
   </head>
 
   <body>
     <div id="app">
-      <h1>Wesplot v2</h1>
-      <p>Hello from v2! Multi-series streaming with independent X values.</p>
-      <div id="chart-container"></div>
+      <h1>Wesplot v2 Test Application</h1>
+      <div id="status" class="status">Initializing...</div>
+      <div id="tables-container"></div>
     </div>
 
     <script type="module" src="/src/v2/main.ts"></script>

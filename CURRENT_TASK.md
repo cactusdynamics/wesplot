@@ -85,6 +85,7 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [x] Optimize for low allocation (reuse buffers, avoid copying on hot path)
   - [x] Add comprehensive tests and benchmarks for Streamer behavior (including integration with `CircularBuffer`)
   - [x] Update documentation to match implementation (buffers created on-demand)
+  - [x] Implement a test application in `src/v2/main.ts` and `v2.html` that shows the streamer working and streams the data into a table.
 
  - [ ] **Step 5:** Implement Chart component
   - [ ] Consider approaches for testing visual elements for AI agents
