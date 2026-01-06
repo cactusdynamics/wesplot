@@ -517,4 +517,49 @@ describe("Streamer", () => {
     expect(onData).not.toHaveBeenCalled();
     streamer.disconnect();
   });
+
+  it("should record the timestamp of the last data message received", async () => {
+    const streamer = new Streamer("ws://localhost/ws2", 1000);
+    const onData = vi.fn();
+
+    streamer.registerCallbacks({ onData });
+
+    const connectPromise = streamer.connect();
+    const mockWs = getWebSocket(streamer);
+    mockWs.simulateOpen();
+    await connectPromise;
+
+    // Initially null
+    expect(streamer.latestDataReceivedTime).toBeNull();
+
+    // Send metadata first to create buffers
+    const metadataMsg = createTestMetadataMessage();
+    mockWs.simulateMessage(encodeWSMessage(metadataMsg).buffer as ArrayBuffer);
+
+    // Send data message
+    const dataMsg: WSMessageData = {
+      Header: {
+        Version: ProtocolVersion,
+        Reserved: [0, 0],
+        Type: MessageTypeData,
+        Length: 56,
+      },
+      Payload: {
+        SeriesID: 0,
+        Length: 3,
+        X: new Float64Array([1.0, 2.0, 3.0]),
+        Y: new Float64Array([10.0, 20.0, 30.0]),
+      },
+    };
+
+    const beforeTime = performance.now();
+    mockWs.simulateMessage(encodeWSMessage(dataMsg).buffer as ArrayBuffer);
+    const afterTime = performance.now();
+
+    expect(streamer.latestDataReceivedTime).not.toBeNull();
+    expect(streamer.latestDataReceivedTime).toBeGreaterThanOrEqual(beforeTime);
+    expect(streamer.latestDataReceivedTime).toBeLessThanOrEqual(afterTime);
+
+    streamer.disconnect();
+  });
 });

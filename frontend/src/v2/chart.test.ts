@@ -20,12 +20,19 @@ vi.mock("chart.js", () => {
     update = vi.fn();
     destroy = vi.fn();
     static register = vi.fn();
+    static defaults = {
+      font: { size: 16 },
+      elements: {
+        point: { borderWidth: 0, radius: 1 },
+      },
+    };
   }
 
   return {
     Chart: MockChart,
     CategoryScale: {},
     LinearScale: {},
+    LineController: {},
     TimeScale: {},
     PointElement: {},
     LineElement: {},

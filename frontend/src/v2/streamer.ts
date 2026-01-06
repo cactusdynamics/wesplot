@@ -41,6 +41,7 @@ export class Streamer {
   private _onStreamEndCallbacks: Set<OnStreamEndCallback> = new Set();
   private _onErrorCallbacks: Set<OnErrorCallback> = new Set();
   private _streamEndReceived = false;
+  private _latestDataReceivedTime: number | null = null;
 
   constructor(
     private _wsUrl: string,
@@ -126,6 +127,11 @@ export class Streamer {
     }
   }
 
+  // Get the timestamp of the last data message received
+  get latestDataReceivedTime(): number | null {
+    return this._latestDataReceivedTime;
+  }
+
   private _handleMessage(data: ArrayBuffer): void {
     const buf = new Uint8Array(data);
     const msg = decodeWSMessage(buf);
@@ -195,6 +201,9 @@ export class Streamer {
     const ySegments = yBuffer.segments();
 
     this._invokeDataCallbacks(SeriesID, xSegments, ySegments);
+
+    // Record the timestamp of the last data message received
+    this._latestDataReceivedTime = performance.now();
   }
 
   private _handleStreamEnd(msg: WSMessageStreamEnd): void {

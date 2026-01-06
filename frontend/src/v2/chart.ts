@@ -4,6 +4,7 @@ import {
   Chart as ChartJS,
   Legend,
   LinearScale,
+  LineController,
   LineElement,
   type Point,
   PointElement,
@@ -19,6 +20,7 @@ import type { ZoomPluginOptions } from "chartjs-plugin-zoom/types/options";
 ChartJS.register(
   CategoryScale,
   LinearScale,
+  LineController,
   TimeScale,
   PointElement,
   LineElement,
@@ -28,12 +30,17 @@ ChartJS.register(
   zoomPlugin,
 );
 
+ChartJS.defaults.font.size = 16;
+ChartJS.defaults.elements.point.borderWidth = 0;
+ChartJS.defaults.elements.point.radius = 1;
+
 // Monotonic counter used to give each Chart instance a unique id for
 // performance marks/measures.
 let _nextChartId = 0;
 
 export interface ChartOptions {
   title?: string;
+  showTitle?: boolean;
   xLabel?: string;
   yLabel?: string;
   xMin?: number;
@@ -42,6 +49,7 @@ export interface ChartOptions {
   yMax?: number;
   columns?: string[];
   xIsTimestamp?: boolean;
+  yUnit?: string;
 }
 
 export interface ChartConfig {
@@ -110,16 +118,19 @@ export class Chart {
           x: {
             type: this._options.xIsTimestamp ? "time" : "linear",
             title: {
-              display: true,
-              text: this._options.xLabel || "X",
+              display: !!this._options.xLabel,
+              text: this._options.xLabel,
             },
             min: this._options.xMin,
             max: this._options.xMax,
           },
           y: {
             title: {
-              display: true,
-              text: this._options.yLabel || "Y",
+              display: !!this._options.yLabel,
+              text: this._options.yLabel,
+            },
+            ticks: {
+              callback: this._addUnits,
             },
             min: this._options.yMin,
             max: this._options.yMax,
@@ -127,7 +138,7 @@ export class Chart {
         },
         plugins: {
           title: {
-            display: true,
+            display: this._options.showTitle ?? false,
             text: this._options.title || "Wesplot",
           },
           legend: {
@@ -331,20 +342,31 @@ export class Chart {
     if (options.title !== undefined && this._chart.options.plugins?.title) {
       this._chart.options.plugins.title.text = options.title;
     }
+
+    if (options.showTitle !== undefined && this._chart.options.plugins?.title) {
+      this._chart.options.plugins.title.display = options.showTitle;
+    }
+
     if (options.xLabel !== undefined && this._chart.options.scales?.x) {
       // @ts-expect-error - Chart.js types are complex; title exists at runtime
       this._chart.options.scales.x.title = {
-        display: true,
+        display: !!options.xLabel,
         text: options.xLabel,
       };
     }
+
     if (options.yLabel !== undefined && this._chart.options.scales?.y) {
       // @ts-expect-error - Chart.js types are complex; title exists at runtime
       this._chart.options.scales.y.title = {
-        display: true,
+        display: !!options.yLabel,
         text: options.yLabel,
       };
     }
+
+    if (options.yUnit !== undefined) {
+      this._options.yUnit = options.yUnit;
+    }
+
     this._chart.update("none");
   }
 
@@ -401,4 +423,31 @@ export class Chart {
     // Clear series state
     this._series.clear();
   }
+
+  /**
+   * Add units to y-axis tick values.
+   */
+  private _addUnits = (
+    value: number | string,
+    _index: unknown,
+    _ticks: unknown,
+  ): string => {
+    let displayValue: string;
+    let displayUnit: string = "";
+
+    if (typeof value === "number") {
+      displayValue = value.toLocaleString(undefined, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 3,
+      });
+    } else {
+      displayValue = value;
+    }
+
+    if (this._options.yUnit && this._options.yUnit.length > 0) {
+      displayUnit = ` ${this._options.yUnit}`;
+    }
+
+    return `${displayValue}${displayUnit}`;
+  };
 }

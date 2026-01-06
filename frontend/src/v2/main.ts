@@ -1,12 +1,16 @@
 /**
- * Wesplot v2 Test Application
+ * Wesplot v2 Main Application
  *
- * This test app uses the Streamer to connect to /ws2 and displays
- * streaming data in tables, one per series.
+ * Connects Streamer to Chart and manages UI state.
  */
 
+import { Chart, type ChartOptions } from "./chart.js";
 import { Streamer } from "./streamer.js";
 import type { Metadata } from "./types.js";
+
+// Import styles (CSS imports don't use .js extension in Vite)
+// biome-ignore lint/correctness/useImportExtensions: CSS imports are handled by Vite bundler
+import "../styles/app.css";
 
 let baseHost = location.host;
 if (import.meta.env.DEV) {
@@ -15,141 +19,299 @@ if (import.meta.env.DEV) {
   baseHost = `${location.hostname}:5274`;
 }
 
-const statusDiv = document.getElementById("status") as HTMLDivElement;
-const tablesContainer = document.getElementById(
-  "tables-container",
-) as HTMLDivElement;
+// DOM elements - retrieve on demand to ensure DOM is loaded
+function getElement<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (!element) throw new Error(`${id} element not found`);
+  return element as T;
+}
 
-function updateStatus(message: string, color: string = "black") {
-  if (statusDiv) {
-    statusDiv.textContent = message;
-    statusDiv.style.color = color;
+/**
+ * Handles the status bar at the bottom of the page.
+ */
+class StatusBar {
+  private statusText: HTMLElement;
+  private liveIndicator: HTMLElement;
+  private notLiveIndicator: HTMLElement;
+  private errorIndicator: HTMLElement;
+  private pauseButton: HTMLButtonElement;
+  private chartWrapper: ChartWrapper;
+
+  constructor(chartWrapper: ChartWrapper) {
+    this.chartWrapper = chartWrapper;
+    this.statusText = getElement<HTMLElement>("status-text");
+    this.liveIndicator = getElement<HTMLElement>("live-indicator");
+    this.notLiveIndicator = getElement<HTMLElement>("not-live-indicator");
+    this.errorIndicator = getElement<HTMLElement>("error-indicator");
+    this.pauseButton = getElement<HTMLButtonElement>("btn-pause");
+    this.setupPauseButton();
+  }
+
+  updateStatus(
+    message: string,
+    state: "connecting" | "live" | "paused" | "error" | "disconnected",
+  ): void {
+    this.statusText.textContent = message;
+
+    // Update indicators
+    this.liveIndicator.style.display =
+      state === "live" ? "inline-block" : "none";
+    this.notLiveIndicator.style.display =
+      state === "connecting" || state === "paused" || state === "disconnected"
+        ? "inline-block"
+        : "none";
+    this.errorIndicator.style.display =
+      state === "error" ? "inline-block" : "none";
+  }
+
+  private setupPauseButton(): void {
+    this.pauseButton.addEventListener("click", () => {
+      const isPaused = !this.chartWrapper.isPaused;
+      this.chartWrapper.setPaused(isPaused);
+
+      const icon = this.pauseButton.querySelector("i");
+      if (!icon) return;
+
+      if (isPaused) {
+        icon.className = "fa-solid fa-play";
+        icon.title = "Resume";
+        this.updateStatus("Paused", "paused");
+      } else {
+        icon.className = "fa-solid fa-pause";
+        icon.title = "Pause";
+        this.updateStatus("Streaming", "live");
+      }
+    });
   }
 }
 
-const streamer = new Streamer(`ws://${baseHost}/ws2`, 1000);
+/**
+ * Handles the chart and its title bar with action buttons.
+ */
+class ChartWrapper {
+  private panelContainer: HTMLElement;
+  private titleBar: HTMLElement | null = null;
+  private titleText: HTMLElement | null = null;
+  private chartArea: HTMLElement | null = null;
+  private chartContainer: HTMLElement | null = null;
+  private chart: Chart | null = null;
+  private _isPaused = false;
+  private screenshotBtn: HTMLButtonElement | null = null;
+  private resetZoomBtn: HTMLButtonElement | null = null;
+  private zoomBtn: HTMLButtonElement | null = null;
+  private panBtn: HTMLButtonElement | null = null;
+  private settingsBtn: HTMLButtonElement | null = null;
 
-const tables: Map<
-  number,
-  { table: HTMLTableElement; tbody: HTMLTableSectionElement }
-> = new Map();
+  constructor() {
+    this.panelContainer = getElement<HTMLElement>("panel");
+  }
 
-streamer.registerCallbacks({
-  onMetadata: (metadata: Metadata) => {
-    updateStatus("Connected, received metadata", "green");
-    console.log("Metadata:", metadata);
+  setPaused(paused: boolean): void {
+    this._isPaused = paused;
+  }
 
-    // Clear existing tables
-    tablesContainer.innerHTML = "";
-    tables.clear();
+  get isPaused(): boolean {
+    return this._isPaused;
+  }
 
-    // Set container to flex layout for side-by-side tables
-    tablesContainer.style.display = "flex";
-    tablesContainer.style.flexDirection = "row";
-    tablesContainer.style.gap = "10px";
-    tablesContainer.style.flexWrap = "wrap";
+  createChart(metadata: Metadata): void {
+    console.log("Metadata received:", metadata);
 
-    // Create a table for each series
+    // Create title bar
+    this.createTitleBar(metadata.WesplotOptions.Title || "Wesplot v2");
+
+    // Create chart area
+    this.chartArea = document.createElement("div");
+    this.chartArea.className = "chart-area";
+    this.panelContainer.appendChild(this.chartArea);
+
+    // Create chart container
+    this.chartContainer = document.createElement("div");
+    this.chartContainer.className = "chartjs-container";
+    this.chartArea.appendChild(this.chartContainer);
+
+    // Create chart options from metadata
+    const chartOptions: ChartOptions = {
+      title: metadata.WesplotOptions.Title,
+      showTitle: false,
+      xLabel: metadata.WesplotOptions.XLabel,
+      yLabel: metadata.WesplotOptions.YLabel,
+      xMin: metadata.WesplotOptions.XMin,
+      xMax: metadata.WesplotOptions.XMax,
+      yMin: metadata.WesplotOptions.YMin,
+      yMax: metadata.WesplotOptions.YMax,
+      yUnit: metadata.WesplotOptions.YUnit,
+      columns: metadata.WesplotOptions.Columns,
+      xIsTimestamp: metadata.XIsTimestamp,
+    };
+
+    // Determine which series to display (all of them for now)
     const numSeries = metadata.WesplotOptions.Columns.length;
-    for (let seriesId = 0; seriesId < numSeries; seriesId++) {
-      const seriesName =
-        metadata.WesplotOptions.Columns[seriesId] || `Series ${seriesId}`;
+    const seriesIds = Array.from({ length: numSeries }, (_, i) => i);
 
-      const table = document.createElement("table");
-      const thead = document.createElement("thead");
-      const headerRow = document.createElement("tr");
-      const thSeries = document.createElement("th");
-      thSeries.textContent = seriesName;
-      thSeries.colSpan = 2;
-      headerRow.appendChild(thSeries);
-      thead.appendChild(headerRow);
+    // Create chart
+    this.chart = new Chart({
+      container: this.chartContainer,
+      seriesIds,
+      options: chartOptions,
+    });
+  }
 
-      const subHeaderRow = document.createElement("tr");
-      const thX = document.createElement("th");
-      thX.textContent = "X";
-      const thY = document.createElement("th");
-      thY.textContent = "Y";
-      subHeaderRow.appendChild(thX);
-      subHeaderRow.appendChild(thY);
-      thead.appendChild(subHeaderRow);
+  private createTitleBar(title: string): void {
+    // Create title bar
+    this.titleBar = document.createElement("div");
+    this.titleBar.className = "title-bar";
 
-      const tbody = document.createElement("tbody");
+    // Create title text
+    this.titleText = document.createElement("div");
+    this.titleText.className = "title-text";
+    this.titleText.textContent = title;
+    this.titleBar.appendChild(this.titleText);
 
-      table.appendChild(thead);
-      table.appendChild(tbody);
+    // Create button bar
+    const buttonBar = document.createElement("div");
+    buttonBar.className = "button-bar";
 
-      // Style the table for flex layout
-      table.style.flex = "1";
-      table.style.minWidth = "200px";
+    // Create buttons
+    this.screenshotBtn = this.createButton("fa-camera", "Save image");
+    this.resetZoomBtn = this.createButton("fa-expand", "Reset zoom");
+    this.zoomBtn = this.createButton("fa-magnifying-glass", "Zoom");
+    this.panBtn = this.createButton("fa-arrows-up-down-left-right", "Pan");
+    this.settingsBtn = this.createButton("fa-gear", "Settings");
 
-      tablesContainer.appendChild(table);
+    buttonBar.appendChild(this.screenshotBtn);
+    buttonBar.appendChild(this.resetZoomBtn);
+    buttonBar.appendChild(this.zoomBtn);
+    buttonBar.appendChild(this.panBtn);
+    buttonBar.appendChild(this.settingsBtn);
 
-      tables.set(seriesId, { table, tbody });
-    }
-  },
+    this.titleBar.appendChild(buttonBar);
+    this.panelContainer.appendChild(this.titleBar);
 
-  onData: (
+    // Setup button event listeners
+    this.setupButtons();
+  }
+
+  private createButton(iconClass: string, title: string): HTMLButtonElement {
+    const button = document.createElement("button");
+    const icon = document.createElement("i");
+    icon.className = `fa-solid ${iconClass}`;
+    icon.title = title;
+    button.appendChild(icon);
+    return button;
+  }
+
+  updateData(
     seriesId: number,
     xSegments: Float64Array[],
     ySegments: Float64Array[],
-  ) => {
-    const tableInfo = tables.get(seriesId);
-    if (!tableInfo) return;
-
-    // Concatenate segments
-    const xData = concatenateSegments(xSegments);
-    const yData = concatenateSegments(ySegments);
-
-    // Clear tbody
-    tableInfo.tbody.innerHTML = "";
-
-    // Add rows (last 50, latest at top)
-    const maxRows = 50;
-    const start = Math.max(0, xData.length - maxRows);
-    for (let i = xData.length - 1; i >= start; i--) {
-      const row = document.createElement("tr");
-      const cellX = document.createElement("td");
-      cellX.textContent = xData[i].toString();
-      const cellY = document.createElement("td");
-      cellY.textContent = yData[i].toString();
-      row.appendChild(cellX);
-      row.appendChild(cellY);
-      tableInfo.tbody.appendChild(row);
+  ): void {
+    if (!this.chart || this._isPaused) {
+      return;
     }
-  },
 
-  onStreamEnd: (error: boolean, message: string) => {
-    const color = error ? "red" : "blue";
-    updateStatus(`Stream ended: ${message}`, color);
-  },
-
-  onError: (error: Error) => {
-    updateStatus(`Error: ${error.message}`, "red");
-    console.error(error);
-  },
-});
-
-// Connect to the streamer
-streamer
-  .connect()
-  .then(() => {
-    updateStatus("Connected to WebSocket", "green");
-  })
-  .catch((error) => {
-    updateStatus(`Failed to connect: ${error.message}`, "red");
-    console.error(error);
-  });
-
-function concatenateSegments(segments: Float64Array[]): Float64Array {
-  if (segments.length === 1) {
-    return segments[0];
+    // Update chart with new data
+    this.chart.update(seriesId, xSegments, ySegments);
   }
-  const totalLength = segments.reduce((sum, seg) => sum + seg.length, 0);
-  const result = new Float64Array(totalLength);
-  let offset = 0;
-  for (const seg of segments) {
-    result.set(seg, offset);
-    offset += seg.length;
+
+  private setupButtons(): void {
+    // Placeholder for button event listeners
+    // Implement functionality as needed
+    if (
+      !this.screenshotBtn ||
+      !this.resetZoomBtn ||
+      !this.zoomBtn ||
+      !this.panBtn ||
+      !this.settingsBtn
+    ) {
+      console.error("Buttons not initialized");
+      return;
+    }
+
+    this.screenshotBtn.addEventListener("click", () => {
+      console.log("Screenshot button clicked");
+    });
+    this.resetZoomBtn.addEventListener("click", () => {
+      console.log("Reset zoom button clicked");
+    });
+    this.zoomBtn.addEventListener("click", () => {
+      console.log("Zoom button clicked");
+    });
+    this.panBtn.addEventListener("click", () => {
+      console.log("Pan button clicked");
+    });
+    this.settingsBtn.addEventListener("click", () => {
+      console.log("Settings button clicked");
+    });
   }
-  return result;
 }
+
+// State
+let streamer: Streamer | null = null;
+let statusBar: StatusBar | null = null;
+let chartWrapper: ChartWrapper | null = null;
+
+// Initialize application
+async function main() {
+  try {
+    chartWrapper = new ChartWrapper();
+    statusBar = new StatusBar(chartWrapper);
+
+    statusBar.updateStatus("Connecting...", "connecting");
+
+    // Create streamer with 1000 point window size
+    streamer = new Streamer(`ws://${baseHost}/ws2`, 1000);
+
+    // Register callbacks
+    streamer.registerCallbacks({
+      onMetadata: handleMetadata,
+      onData: handleData,
+      onStreamEnd: handleStreamEnd,
+      onError: handleError,
+    });
+
+    // Connect to WebSocket
+    await streamer.connect();
+    statusBar.updateStatus("Connected", "live");
+  } catch (error) {
+    handleError(error instanceof Error ? error : new Error(String(error)));
+  }
+}
+
+function handleMetadata(metadata: Metadata): void {
+  if (!statusBar || !chartWrapper) return;
+
+  // Create chart with title bar
+  chartWrapper.createChart(metadata);
+
+  statusBar.updateStatus("Streaming", "live");
+}
+
+function handleData(
+  seriesId: number,
+  xSegments: Float64Array[],
+  ySegments: Float64Array[],
+): void {
+  if (!chartWrapper) return;
+  chartWrapper.updateData(seriesId, xSegments, ySegments);
+}
+
+function handleStreamEnd(error: boolean, message: string): void {
+  if (!statusBar) return;
+  const statusMessage = error
+    ? `Error: ${message}`
+    : `Stream ended: ${message}`;
+  statusBar.updateStatus(statusMessage, error ? "error" : "disconnected");
+  console.log(`Stream ended: ${message}`);
+}
+
+function handleError(error: Error): void {
+  if (!statusBar) return;
+  statusBar.updateStatus(`Error: ${error.message}`, "error");
+  console.error("Streamer error:", error);
+}
+
+// Start application when DOM is ready
+window.addEventListener("load", () => {
+  main();
+});
