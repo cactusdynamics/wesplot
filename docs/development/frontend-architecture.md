@@ -141,9 +141,10 @@ interface ChartConfig {
   container: HTMLElement;           // DOM element to render chart into
   seriesIds: number[];              // Which series to display (series identifiers)
   metadata: Metadata;               // Stream metadata (from onMetadata)
-  windowSize?: number;              // Max points to display (rolling window)
   colors?: string[];                // Series colors
 }
+
+**Note:** The rolling window is enforced by the Streamer via per-series CircularBuffers; charts should use the supplied segments as-is.
 
 class Chart {
   constructor(container: HTMLElement, config: ChartConfig);
@@ -160,9 +161,6 @@ class Chart {
   // last render. This batches render work and avoids redrawing on every
   // incoming message.
   render(): void;
-
-  // Handle stream end
-  handleStreamEnd(error: boolean, message: string): void;
 
   // Update chart options (title, labels, etc.)
   updateOptions(options: Partial<WesplotOptions>): void;
@@ -197,7 +195,6 @@ class Chart {
 5. **Lifecycle:**
   - `update()`: Called by Streamer (via callback) to attach the latest buffer segments to the chart and increment a generation counter (cheap, allocation-free).
   - `render()`: Called on `requestAnimationFrame`; checks the generation counter and only performs Chart.js data conversion and drawing when the generation changed since the last render.
-  - `handleStreamEnd()`: Called when stream ends (clean termination or error)
   - `destroy()`: Clean up Chart.js instance and buffers
 
 **Data Flow:**
@@ -249,14 +246,12 @@ function main() {
     },
 
     onStreamEnd: (error, message) => {
-      // 5. Handle stream termination
-      if (chart) {
-        chart.handleStreamEnd(error, message);
-      }
+      // 5. Handle stream termination at the application level
       if (error) {
         console.error('Stream error:', message);
       }
     },
+
 
     onError: (error) => {
       console.error('Streamer error:', error);

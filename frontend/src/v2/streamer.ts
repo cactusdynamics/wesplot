@@ -43,10 +43,10 @@ export class Streamer {
   private _streamEndReceived = false;
 
   constructor(
-    private wsUrl: string,
-    private windowSize: number,
+    private _wsUrl: string,
+    private _windowSize: number,
   ) {
-    if (!Number.isInteger(windowSize) || windowSize <= 0) {
+    if (!Number.isInteger(_windowSize) || _windowSize <= 0) {
       throw new Error("windowSize must be a positive integer");
     }
   }
@@ -81,7 +81,7 @@ export class Streamer {
 
       this._streamEndReceived = false;
       let connectionEstablished = false;
-      this._ws = new WebSocket(this.wsUrl);
+      this._ws = new WebSocket(this._wsUrl);
       this._ws.binaryType = "arraybuffer";
 
       this._ws.onopen = () => {
@@ -157,8 +157,8 @@ export class Streamer {
     // Create circular buffers for each series based on metadata
     const numSeries = metadata.WesplotOptions.Columns.length;
     for (let seriesId = 0; seriesId < numSeries; seriesId++) {
-      this._xBuffers.set(seriesId, new CircularBuffer(this.windowSize));
-      this._yBuffers.set(seriesId, new CircularBuffer(this.windowSize));
+      this._xBuffers.set(seriesId, new CircularBuffer(this._windowSize));
+      this._yBuffers.set(seriesId, new CircularBuffer(this._windowSize));
     }
 
     this._invokeMetadataCallbacks(metadata);

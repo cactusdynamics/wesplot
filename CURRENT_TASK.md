@@ -87,15 +87,15 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [x] Update documentation to match implementation (buffers created on-demand)
   - [x] Implement a test application in `src/v2/main.ts` and `v2.html` that shows the streamer working and streams the data into a table.
 
- - [ ] **Step 5:** Implement Chart component
-  - [ ] Consider approaches for testing visual elements for AI agents
-  - [ ] Create `src/v2/chart.ts`
-  - [ ] Define Chart API (constructor options: series IDs, display config)
-  - [ ] Integrate with Chart.js for rendering
-  - [ ] Handle data updates from Streamer callbacks
-  - [ ] Support multiple series with independent X values
-  - [ ] Implement efficient data appending (no full re-renders)
-  - [ ] Add basic configuration (colors, labels, etc.)
+ - [x] **Step 5:** Implement Chart component
+  - [x] Create `src/v2/chart.ts`
+  - [x] Define Chart API (constructor options: series IDs, display config)
+  - [x] Integrate with Chart.js for rendering
+  - [x] Handle data updates from Streamer callbacks
+  - [x] Support multiple series with independent X values
+  - [x] Implement efficient data appending (no full re-renders)
+  - [x] Add basic configuration (colors, labels, etc.)
+  - [ ] Add ways to remove a series from the ChartJS plot if it is removed.
 
 - [ ] **Step 6:** Create v2 main application
   - [ ] Create `src/v2/main.ts`
