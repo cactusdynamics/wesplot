@@ -87,35 +87,40 @@ This is a **major frontend rewrite** to support multi-series with independent X 
   - [x] Update documentation to match implementation (buffers created on-demand)
   - [x] Implement a test application in `src/v2/main.ts` and `v2.html` that shows the streamer working and streams the data into a table.
 
- - [ ] **Step 5:** Implement Chart component
-  - [ ] Consider approaches for testing visual elements for AI agents
-  - [ ] Create `src/v2/chart.ts`
-  - [ ] Define Chart API (constructor options: series IDs, display config)
-  - [ ] Integrate with Chart.js for rendering
-  - [ ] Handle data updates from Streamer callbacks
-  - [ ] Support multiple series with independent X values
-  - [ ] Implement efficient data appending (no full re-renders)
-  - [ ] Add basic configuration (colors, labels, etc.)
+ - [x] **Step 5:** Implement Chart component
+  - [x] Create `src/v2/chart.ts`
+  - [x] Define Chart API (constructor options: series IDs, display config)
+  - [x] Integrate with Chart.js for rendering
+  - [x] Handle data updates from Streamer callbacks
+  - [x] Support multiple series with independent X values
+  - [x] Implement efficient data appending (no full re-renders)
+  - [x] Add basic configuration (colors, labels, etc.)
 
 - [ ] **Step 6:** Create v2 main application
-  - [ ] Create `src/v2/main.ts`
-  - [ ] Initialize Streamer and connect to `/ws2`
-  - [ ] Create one or more Chart instances
-  - [ ] Register chart update callbacks with Streamer
-  - [ ] Handle connection lifecycle (connect, stream end, errors)
+  - [x] Create `src/v2/main.ts`
+  - [x] Initialize Streamer and connect to `/ws2`
+  - [x] Create one Chart instances
+  - [x] Register chart update callbacks with Streamer
+  - [ ] Handle connection lifecycle (connect, stream end, errors) on the application side with a tool bar at the bottom
 
-- [ ] **Step 7:** Add comprehensive tests for v2 components
+- [ ] **Step 7**: Allow v2 application to be interactive
+  - [ ] Implement ability to pause the stream
+  - [ ] Implement ability to configure the chart options
+  - [ ] Implement ability to add a second chart via a split
+  - [ ] Add ways to remove a series from the ChartJS plot if it is removed.
+
+- [ ] **Step 8:** Add comprehensive tests for v2 components
   - [ ] Integration tests for v2 app (end-to-end streaming)
   - [ ] Performance tests (memory usage, frame rates)
   - [ ] Ensure 100% coverage where possible
 
-- [ ] **Step 8:** Update build and deployment
+- [ ] **Step 9:** Update build and deployment
   - [ ] Update Makefile to build v2 frontend
   - [ ] Ensure v2.html is served by backend
   - [ ] Test v2 with live data streaming
   - [ ] Verify no regressions in original frontend
 
-- [ ] **Step 9:** Final validation and documentation
+- [ ] **Step 10:** Final validation and documentation
   - [ ] Run all tests (backend and frontend)
   - [ ] Update user documentation for v2 features
   - [ ] Mark Phase 2 complete

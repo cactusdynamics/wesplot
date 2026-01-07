@@ -4,29 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Wesplot v2</title>
-    <style>
-      table {
-        border-collapse: collapse;
-        margin: 10px;
-      }
-      th, td {
-        border: 1px solid #ddd;
-        padding: 4px;
-      }
-      th {
-        background-color: #f2f2f2;
-      }
-      .status {
-        margin: 10px;
-      }
-    </style>
   </head>
 
   <body>
-    <div id="app">
-      <h1>Wesplot v2 Test Application</h1>
-      <div id="status" class="status">Initializing...</div>
-      <div id="tables-container"></div>
+    <div id="container">
+      <div id="main">
+        <div class="panel" id="panel">
+        </div>
+      </div>
+
+      <div id="status">
+        <div class="title-text">
+          <i class="fa-regular fa-circle-dot red" id="live-indicator" style="display: none;"></i>
+          <i class="fa-regular fa-circle black" id="not-live-indicator" style="display: inline-block;"></i>
+          <i class="fa-solid fa-triangle-exclamation red" id="error-indicator" style="display: none;"></i>
+          <span id="status-text">Connecting...</span>
+        </div>
+
+        <div class="button-bar">
+          <button id="btn-pause">
+            <i class="fa-solid fa-pause" title="Pause"></i>
+          </button>
+
+          <a class="button" href="https://github.com/cactusdynamics/wesplot">
+            <i class="fa-brands fa-github" title="Github link"></i>
+          </a>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/v2/main.ts"></script>

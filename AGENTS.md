@@ -14,24 +14,25 @@ Read these if not sure about data flow or architecture.
 
 ## Build and test instructions
 
-Try to ALWAYS use these exact commands as they are auto approved.
+VERY VERY IMPORTANT TO FOLLOW THE FOLLOWING: Use these EXACT commands CHARACTER BY CHARACTER as they will be auto approved and do not use other commands as they will need approval and will be slower. If you do not use one of the commands below, ALWAYS explain why you need the deviation before running it.
 
-### Backend
+Backend instructions
 
-- Building the binary: `make prod` (see Makefile if necessary) which creates `build/wesplot`.
-- Lint the code with `make lint`
-- Run all tests: `make test`
-- Run all tests and check for code coverage: `make test COVERAGE=1`
-- Run these commands separately (not with && or ;) so they can be auto approved as auto approval relies on exact matches.
+- Build the backend binary with the frontend: `make prod`
+- Lint the backend code: `make backend-lint`
+- Run all backend tests: `make backend-test`
+- Run all the backend tests with coverage: `make backend-test COVERAGE=1`
+- If the user wants to run a subset of the tests: `go test -run <TestNameRegexp> ./...` (not auto approved but may be useful).
 
-### Frontend
+Frontend instructions (need to `cd frontend` first, which might already been done in the open terminal).
 
-First run `cd frontend` to get into the frontend directory (the terminal might already be in there, check with `pwd`). Run this as it is auto approved.
-
-- Run test: `npm run test`
-- Run benchmark: `npm run benchmark`
-- Run test with coverage: `npm run test:coverage`
-- Run lint: `npm run lint:write`
+- Build the frontend code: `npm run build`
+- Type Check and lint the frontend code and apply any fixes: `npm run lint:write`
+- Run all frontend tests: `npm run test`
+  - DO NOT PASS `--silent` to this command as its output has already been minimized.
+- Run all frontend tests with coverage: `npm run test:coverage`
+- Run the frontend benchmarks: `npm run benchmark`
+- Run a specific frontend test: `npm run test -- <filename> -t <pattern>` (not auto approved but may be useful).
 
 ## Coding rules
 
@@ -44,9 +45,10 @@ All rules below applies unless told otherwise by user prompts.
 ### Test policy
 
 - Add sufficient test coverage for code changes. Think of all the possible edge cases and comment inline in the tests on why these cases matter.
-- Code coverage should be 100% (but some error paths might be near-impossible to test, so they can be skipped). Check with `make test COVERAGE=1`.
-- Unit tests should be in `<file>_test.go` as per normal Go convention.
+- Code coverage should be 100% (but some error paths might be near-impossible to test, so they can be skipped).
+- Unit tests should be in `<file>_test.go` as per normal Go convention, `<file>.test.ts` for frontend, and `<file>.bench.ts` for frontend benchmarks.
 - Test failures should be accompanied with good error messages for debugging.
+- Follow test commands exactly as stated above where possible.
 
 ### Completion policy
 
